@@ -1,0 +1,6 @@
+swe.py
+*.out
+*.o
+serial
+gpu
+mpi
