@@ -73,7 +73,7 @@ void wave(int length, int width, int nx, int ny, double max_height, double *h, d
     {
         for (int j = 0; j < ny + 1; j++)
         {
-            h(i, j) = max_height * sin(2.2 * PI * i / nx);
+            h(i, j) = max_height * sin(2 * PI * i / nx);
         }
     }
 }

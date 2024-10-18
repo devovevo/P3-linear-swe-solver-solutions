@@ -1,4 +1,17 @@
-#include "main.h"
+#include <stdbool.h>
+#include <stdlib.h>
+#include <stdio.h>
+
+#ifdef MPI
+#include <mpi.h>
+#endif
+
+#ifdef CUDA
+#include <cuda.h>
+#include <cuda_runtime.h>
+#endif
+
+#include "solver.h"
 
 #include "scenarios.h"
 
@@ -104,11 +117,7 @@ int main(int argc, char **argv)
         return 1;
     }
 
-#ifdef MPI
-    init_mpi(h, u, v, length, width, nx, ny, depth, g, dt, rank, num_procs);
-#else
-    init(h, u, v, length, width, nx, ny, depth, g, dt);
-#endif
+    init(h, u, v, length, width, nx, ny, depth, g, dt, rank, num_procs);
 
     FILE *fptr;
 
@@ -138,14 +147,7 @@ int main(int argc, char **argv)
 
         if (output && i % save_iter == 0)
         {
-#ifdef MPI
-            gather_h(h);
-#endif
-
-#ifdef CUDA
-            transfer_to_host(h);
-#endif
-
+            transfer(h);
             fwrite(h, sizeof(double), (nx + 1) * (ny + 1), fptr);
         }
     }

@@ -2,27 +2,7 @@
 #include <stdio.h>
 #include <math.h>
 
-#define h(i, j) h[(i) * (ny + 1) + (j)]
-#define u(i, j) u[(i) * (ny + 1) + (j)]
-#define v(i, j) v[(i) * (ny + 2) + (j)]
-
-#define dh(i, j) dh[(i) * ny + (j)]
-#define du(i, j) du[(i) * ny + (j)]
-#define dv(i, j) dv[(i) * (ny + 1) + (j)]
-
-#define dh1(i, j) dh1[(i) * ny + (j)]
-#define du1(i, j) du1[(i) * ny + (j)]
-#define dv1(i, j) dv1[(i) * (ny + 1) + (j)]
-
-#define dh2(i, j) dh2[(i) * ny + (j)]
-#define du2(i, j) du2[(i) * ny + (j)]
-#define dv2(i, j) dv2[(i) * (ny + 1) + (j)]
-
-#define dh_dx(i, j) (h(i + 1, j) - h(i, j)) / dx
-#define dh_dy(i, j) (h(i, j + 1) - h(i, j)) / dy
-
-#define du_dx(i, j) (u(i + 1, j) - u(i, j)) / dx
-#define dv_dy(i, j) (v(i, j + 1) - v(i, j)) / dy
+#include "common.h"
 
 int nx, ny;
 
@@ -59,7 +39,7 @@ void init(double *h0, double *u0, double *v0, double length_, double width_, int
     dt = dt_;
 }
 
-void compute_dh(double *h, double *u, double *v)
+void compute_dh()
 {
     for (int i = 0; i < nx; i++)
     {
@@ -70,7 +50,7 @@ void compute_dh(double *h, double *u, double *v)
     }
 }
 
-void compute_du(double *h, double *u, double *v)
+void compute_du()
 {
     for (int i = 0; i < nx + 1; i++)
     {
@@ -81,7 +61,7 @@ void compute_du(double *h, double *u, double *v)
     }
 }
 
-void compute_dv(double *h, double *u, double *v)
+void compute_dv()
 {
     for (int i = 0; i < nx; i++)
     {
@@ -92,9 +72,9 @@ void compute_dv(double *h, double *u, double *v)
     }
 }
 
-void compute_boundaries_horizontal(double *h, double *u, double *v)
+void compute_boundaries_horizontal()
 {
-    for (int j = 0; j < ny + 1; j++)
+    for (int j = 0; j < ny; j++)
     {
         u(0, j) = u(nx, j);
         u(nx + 1, j) = u(1, j);
@@ -105,9 +85,9 @@ void compute_boundaries_horizontal(double *h, double *u, double *v)
     }
 }
 
-void compute_boundaries_vertical(double *h, double *u, double *v)
+void compute_boundaries_vertical()
 {
-    for (int i = 0; i < nx + 1; i++)
+    for (int i = 0; i < nx; i++)
     {
         u(i, ny) = u(i, 0);
 
@@ -120,7 +100,7 @@ void compute_boundaries_vertical(double *h, double *u, double *v)
 
 int t = 0;
 
-void euler(double *h, double *u, double *v)
+void euler()
 {
     double a1, a2, a3;
 
@@ -155,37 +135,39 @@ void swap_buffers()
 {
     double *tmp;
 
-    tmp = dh;
-    dh = dh1;
-    dh1 = dh2;
-    dh2 = tmp;
+    tmp = dh2;
+    dh1 = dh;
+    dh2 = dh1;
+    dh = tmp;
 
-    tmp = du;
-    du = du1;
-    du1 = du2;
-    du2 = tmp;
+    tmp = du2;
+    du1 = du;
+    du2 = du1;
+    du = tmp;
 
-    tmp = dv;
-    dv = dv1;
-    dv1 = dv2;
-    dv2 = tmp;
+    tmp = dv2;
+    dv1 = dv;
+    dv2 = dv1;
+    dv = tmp;
 }
 
 void step(double *h, double *u, double *v)
 {
-    compute_boundaries_horizontal(h, u, v);
-    compute_boundaries_vertical(h, u, v);
+    compute_dh();
+    compute_du();
+    compute_dv();
 
-    compute_dh(h, u, v);
-    compute_du(h, u, v);
-    compute_dv(h, u, v);
+    euler();
 
-    euler(h, u, v);
+    compute_boundaries_horizontal();
+    compute_boundaries_vertical();
 
     swap_buffers();
 
     t++;
 }
+
+void transfer(double *h) {}
 
 void free_memory()
 {

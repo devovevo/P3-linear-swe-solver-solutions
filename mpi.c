@@ -1,30 +1,8 @@
 #include <mpi.h>
 
-#define h(i, j) h[(i) * (ny + 1) + (j)]
-#define u(i, j) u[(i) * (ny + 1) + (j)]
-#define v(i, j) v[(i) * (ny + 2) + (j)]
-
-#define dh(i, j) dh[(i) * ny + (j)]
-#define du(i, j) du[(i) * ny + (j)]
-#define dv(i, j) dv[(i) * (ny + 1) + (j)]
-
-#define dh1(i, j) dh1[(i) * ny + (j)]
-#define du1(i, j) du1[(i) * ny + (j)]
-#define dv1(i, j) dv1[(i) * (ny + 1) + (j)]
-
-#define dh2(i, j) dh2[(i) * ny + (j)]
-#define du2(i, j) du2[(i) * ny + (j)]
-#define dv2(i, j) dv2[(i) * (ny + 1) + (j)]
-
-#define dh_dx(i, j) (h(i + 1, j) - h(i, j)) / dx
-#define dh_dy(i, j) (h(i, j + 1) - h(i, j)) / dy
-
-#define du_dx(i, j) (u(i + 1, j) - u(i, j)) / dx
-#define dv_dy(i, j) (v(i, j + 1) - v(i, j)) / dy
+#include "common.h"
 
 double *h, *u, *v;
-double *h_left, *u_left, *h_right, *u_right, *v_right;
-
 double *dh, *du, *dv, *dh1, *du1, *dv1, *dh2, *du2, *dv2;
 
 int nx, ny;
@@ -50,16 +28,6 @@ void init_mpi(double *h0, double *u0, double *v0, double length_, double width_,
     end_row = rank == num_procs - 1 ? nx : nx * (rank + 1) / num_procs - 1;
     num_rows = end_row - start_row + 1;
 
-    if (num_procs_ > 1)
-    {
-        h_left = (double *)calloc(ny + 1, sizeof(double));
-        u_left = (double *)calloc(ny + 1, sizeof(double));
-
-        h_right = (double *)calloc(ny + 1, sizeof(double));
-        u_right = (double *)calloc(ny + 1, sizeof(double));
-        v_right = (double *)calloc(ny + 1, sizeof(double));
-    }
-
     if (rank == 0)
     {
         recvcounts = (int *)calloc(num_procs, sizeof(int));
@@ -67,14 +35,12 @@ void init_mpi(double *h0, double *u0, double *v0, double length_, double width_,
         for (int i = 0; i < num_procs; i++)
         {
             int start_row_i = nx_ * i / num_procs;
-            int end_row_i = rank == num_procs - 1 ? ny : nx * (rank + 1) / num_procs - 1;
+            int end_row_i = rank == num_procs - 1 ? nx : nx * (rank + 1) / num_procs - 1;
             int num_rows_i = end_row_i - start_row_i + 1;
 
             recvcounts[i] = num_rows_i * (ny + 1);
             displcounts[i] = i == 0 : 0 ? displcounts[i - 1] + recvcounts[i - 1];
         }
-
-        recvbuf = (double *)calloc((nx + 1) * (ny + 1), sizeof(double));
     }
 
     dh = (double *)calloc(num_rows * ny, sizeof(double));
@@ -98,7 +64,7 @@ void init_mpi(double *h0, double *u0, double *v0, double length_, double width_,
     dt = dt_;
 }
 
-compute_dh()
+void compute_dh()
 {
     for (int i = start_row; i < end_row; i++)
     {
@@ -107,15 +73,9 @@ compute_dh()
             dh(i, j) = -H * (du_dx(i, j) + dv_dy(i, j));
         }
     }
-
-    for (int j = 0; j < ny; j++)
-    {
-        double du_dx = (u_right[j] - u(end_row, j)) / dx;
-        dh(end_row, j) = -H * (du_dx + dv_dy(end_row, j));
-    }
 }
 
-compute_du()
+void compute_du()
 {
     for (int i = start_row; i < end_row + 1; i++)
     {
@@ -124,15 +84,9 @@ compute_du()
             du(i, j) = -g * dh_dx(i, j);
         }
     }
-
-    for (int j = 0; j < ny; j++)
-    {
-        double dh_dx = (h_right[j] - h(end_row, j)) / dx;
-        du(end_row + 1, j) = -g * dh_dx;
-    }
 }
 
-compute_dv()
+void compute_dv()
 {
     for (int i = start_row; i < end_row; i++)
     {
@@ -143,26 +97,22 @@ compute_dv()
     }
 }
 
-void compute_boundaries_left()
+void compute_boundaries_horizontal()
 {
-    for (int j = 0; j < ny + 1; j++)
+    for (int j = 0; j < ny; j++)
     {
-        u(start_row, j) = u_up[j];
-    }
-}
+        u(start_row, j) = u(start_row - 1 % (nx + 1), j);
+        u(end_row + 1, j) = u(start_row + 1, j);
 
-void compute_boundaries_right()
-{
-    for (int j = 0; j < ny + 1; j++)
-    {
-        u(end_row + 1, j) = u_down[j];
         v(end_row, j) = v(0, j);
+
+        h(end_row, j) = h(0, j);
     }
 }
 
 void compute_boundaries_vertical()
 {
-    for (int i = start_row; i < end_row + 1; i++)
+    for (int i = start_row; i < end_row; i++)
     {
         u(i, ny) = u(i, 0);
 
@@ -171,6 +121,30 @@ void compute_boundaries_vertical()
 
         h(i, ny) = h(i, 0);
     }
+}
+
+void step()
+{
+    MPI_Request h_right_r;
+    MPI_Irecv(&h(end_row + 1, 0), ny + 1, MPI_DOUBLE, (rank + 1) & num_procs, 0, MPI_COMM_WORLD, &h_right_r);
+
+    MPI_Request u_right_r;
+    MPI_Irecv(&u(end_row + 2, 0), ny + 1, MPI_DOUBLE, (rank + 1) & num_procs, 0, MPI_COMM_WORLD, &u_right_r);
+
+    compute_boundaries_vertical();
+    compute_dv();
+
+    MPI_Wait(&h_right_r, MPI_STATUS_IGNORE);
+    compute_dh();
+
+    MPI_Wait(&u_right_r, MPI_STATUS_IGNORE);
+    compute_du();
+
+    compute_boundaries_horizontal();
+
+    euler();
+
+    swap_buffers();
 }
 
 void gather_h(double *h_recv)

@@ -39,9 +39,8 @@ fig = plt.figure(figsize=(10, 10))
 nc = 12
 colorlevels = np.concatenate([np.linspace(-1, -.05, nc), np.linspace(.05, 1, nc)])
 
-hmax = np.max(np.abs(h[0, :, :]))
-
 for i in range(num_frames):
+    hmax = np.max(np.abs(h[0, :, :]))
     plt.clf()
 
     X, Y = np.meshgrid(hx, hy)
