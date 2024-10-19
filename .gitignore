@@ -1,7 +1,11 @@
 swe.py
 *.out
 *.o
-serial
-gpu
-mpi
+*.gif
+
+serial-files/serial
+gpu-files/gpu
+mpi-files/mpi
+
+env/
 .vscode/
