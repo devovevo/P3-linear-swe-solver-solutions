@@ -50,7 +50,7 @@ As you can see, we take the $u$ values on the horizontal edges of our cells, and
 
 # Discretizing the Problem in Time
 
-Now that we're able to compute our spatial derivatives, how do we step our equations forward in time? Re-arranging our linear SWE equations, we see that the derivatives of each of our variables with respect to time is given by
+Now that we're able to compute our spatial derivatives, how do we step our equations forward in time? Re-arranging our linear SWE equations, we see that the derivatives of each of our variables with respect to time are given by
 
 $$
 \begin{align*}
@@ -84,9 +84,9 @@ Using these two ideas, if we let $h_{x,y}^t$ represent the value of our height f
 
 $$
 \begin{align*}
-\hat{\partial}_t h_{x, y}^t &= -H \left(\frac{u_{x + 1, y}^t - u_{x, y}^t}{\Delta x} + \frac{v_{x, y + 1}^t - v_{x, y}^t}{\Delta y}\right), \\
-\hat{\partial}_t u_{x + 1, y}^t &= -g \left(\frac{h_{x + 1, y}^t - h_{x, y}^t}{\Delta x}\right), \\
-\hat{\partial}_t v_{x, y + 1}^t &= -g \left(\frac{h_{x, y + 1}^t - h_{x, y}^t}{\Delta y}\right)
+\partial_t h_{x, y}^t &= -H \left(\frac{u_{x + 1, y}^t - u_{x, y}^t}{\Delta x} + \frac{v_{x, y + 1}^t - v_{x, y}^t}{\Delta y}\right), \\
+\partial_t u_{x + 1, y}^t &= -g \left(\frac{h_{x + 1, y}^t - h_{x, y}^t}{\Delta x}\right), \\
+\partial_t v_{x, y + 1}^t &= -g \left(\frac{h_{x, y + 1}^t - h_{x, y}^t}{\Delta y}\right)
 \end{align*}
 $$
 
