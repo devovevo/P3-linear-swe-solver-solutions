@@ -12,7 +12,7 @@ $$
 $$
 where $(u, v)$ describes the velocity field of a body of water, $H$ is the mean depth of the water (i.e. the average) at a particular point, $h$ is how much the height deviates from the mean at a given time, $k$ describes the viscous drag (basically a friction force), and $\nu$ is the viscosity (how much a liquid wants to flow away from itself). In some other sources you might also see a term dealing with $f$, the Coriolis parameter, which takes into account the rotation of the Earth. However, since we assume we are on a scale much smaller than this, we ignore this term. As you can see, these equations are quite the doozy, though if you'd like to know more please see the [Wikipedia](https://en.wikipedia.org/wiki/Shallow_water_equations) or ask Professor Bindel (he knows way more than us TAs!).
 
-Since this is so complicated, and I have no background in PDEs, I decided to use the simpler, linearized shallow water equations. Essentially, if we assume that our height deviation is small relative to the average height (i.e. $h \ll H$) and that the higher order terms of velocity are quite small, through some derivations we have
+Since this is so complicated, and I have no background in PDEs, I decided to use the simpler, linearized shallow water equations. Essentially, if we assume that our height deviation is small relative to the average height (i.e. $h \ll H$) and that the higher order terms of velocity are quite small, through some derivations we can reach
 $$
 \begin{align*}
 \frac{\partial h}{\partial t} + H \left(\frac{\partial u}{\partial x} + \frac{\partial v}{\partial y}\right) = 0, \\
@@ -20,7 +20,7 @@ $$
 \frac{\partial v}{\partial t} = -g \frac{\partial h}{\partial y} - kv
 \end{align*}
 $$
-Since we want our equations to be energy conserving (as a check of our correctness), we assume that $k = 0$, so we don't dissipate energy due to friction. Now, we have a much simpler looking set of equations, though again, how do we solve this? If you already know about solving PDEs numerically you can skip this next section, but if not (like me), then please read on!
+Since we want our equations to be energy conserving (as a check of our correctness), we assume that $k = 0$, so we don't want to dissipate energy due to friction. Now that we have a much simpler looking set of equations, how do we actualy solve them? If you already know about solving PDEs numerically you can skip this next section, but if not (like me), then please read on!
 
 # Discretizing the Problem in Space
 
@@ -52,9 +52,7 @@ $$
 $$
 Since these give us the rate of change of each of our variables with respect to time, if we take a small discrete time step $\Delta t$ then we could imagine that we could use them to approximate the function value at our next time step. Using a difference quotient, we can reason that
 $$
-\begin{align*}
 \frac{f(t + \Delta t) - f(t)}{\Delta t} \approx f'(t) \implies f(t + \Delta t) \approx f(t) + f'(t) \cdot \Delta t.
-\end{align*}
 $$
 This is called Euler's method, and is first order, as we are essentially using our derivative as a linearization about the point $t$ to predict what the next value of our function will be. However, we could imagine that if our function is quite non-linear this approximation won't hold well, so we could imagine using higher order (i.e. with regards to a Taylor expansion) schemes. I based my implementation off of this [guide](https://empslocal.ex.ac.uk/people/staff/gv219/codes/shallowwater.pdf), which uses a 3rd order linear multistep method (i.e. it uses previous evaluations to make its next prediction) called the [Adams-Bashford method](https://en.wikipedia.org/wiki/Linear_multistep_method#Adams%E2%80%93Bashforth_methods), which is given by
 $$
