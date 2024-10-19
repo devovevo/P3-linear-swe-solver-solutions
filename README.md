@@ -6,8 +6,8 @@ Welcome to P3 everyone! We hope that you enjoyed simulating particle hydrodynami
 
 The original shallow water equations, in non-conservative form, are given by
 $$
-\frac{\partial h}{\partial t} + \frac{\partial}{\partial x} \left((H + u) u\right) + \frac{\partial}{\partial y} \left((H + u) v\right) = 0, \\\\
-\frac{\partial u}{\partial t} + u \frac{\partial u}{\partial x} + v \frac{\partial u}{\partial y} = -g \frac{\partial h}{\partial x} - ku + \nu \left(\frac{\partial^2 u}{\partial x^2} + \frac{\partial^2 u}{\partial y^2}\right), \\\\
+\frac{\partial h}{\partial t} + \frac{\partial}{\partial x} \left((H + u) u\right) + \frac{\partial}{\partial y} \left((H + u) v\right) = 0, \\\\\\\\
+\frac{\partial u}{\partial t} + u \frac{\partial u}{\partial x} + v \frac{\partial u}{\partial y} = -g \frac{\partial h}{\partial x} - ku + \nu \left(\frac{\partial^2 u}{\partial x^2} + \frac{\partial^2 u}{\partial y^2}\right), \\\\\\\\
 \frac{\partial v}{\partial t} + u \frac{\partial v}{\partial x} + v \frac{\partial v}{\partial y} = -g \frac{\partial h}{\partial y} - kv + \nu \left(\frac{\partial^2 v}{\partial x^2} + \frac{\partial^2 v}{\partial y^2}\right)
 $$
 where $(u, v)$ describes the velocity field of a body of water, $H$ is the mean depth of the water (i.e. the average) at a particular point, $h$ is how much the height deviates from the mean at a given time, $k$ describes the viscous drag (basically a friction force), and $\nu$ is the viscosity (how much a liquid wants to flow away from itself). In some other sources you might also see a term dealing with $f$, the Coriolis parameter, which takes into account the rotation of the Earth. However, since we assume we are on a scale much smaller than this, we ignore this term. As you can see, these equations are quite the doozy, though if you'd like to know more please see the [Wikipedia](https://en.wikipedia.org/wiki/Shallow_water_equations) or ask Professor Bindel (he knows way more than us TAs!).
@@ -52,7 +52,9 @@ $$
 $$
 Since these give us the rate of change of each of our variables with respect to time, if we take a small discrete time step $\Delta t$ then we could imagine that we could use them to approximate the function value at our next time step. Using a difference quotient, we can reason that
 $$
+\begin{align*}
 \frac{f(t + \Delta t) - f(t)}{\Delta t} \approx f'(t) \implies f(t + \Delta t) \approx f(t) + f'(t) \cdot \Delta t.
+\end{align*}
 $$
 This is called Euler's method, and is first order, as we are essentially using our derivative as a linearization about the point $t$ to predict what the next value of our function will be. However, we could imagine that if our function is quite non-linear this approximation won't hold well, so we could imagine using higher order (i.e. with regards to a Taylor expansion) schemes. I based my implementation off of this [guide](https://empslocal.ex.ac.uk/people/staff/gv219/codes/shallowwater.pdf), which uses a 3rd order linear multistep method (i.e. it uses previous evaluations to make its next prediction) called the [Adams-Bashford method](https://en.wikipedia.org/wiki/Linear_multistep_method#Adams%E2%80%93Bashforth_methods), which is given by
 $$
