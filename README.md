@@ -26,3 +26,20 @@ Since we want our equations to be energy conserving (as a check of our correctne
 
 # Discretizing the Problem
 
+In order to actually solve this problem numerically, we need to be able to compute derivatives with respect to space as well as time. Looking at the definition of a derivative
+$$
+\begin{align*}
+f'(x) = \lim_{h \rightarrow 0} \frac{f(x + h) - f(x)}{h}
+\end{align*}
+$$
+we see that it is the limit of a difference quotient. Given that, we could imagine that for a fixed (but small) $h$, the corresponding finite difference quotient should be a good approximation. Therefore, given a rectangular domain $R \subseteq \mathbb{R}^2$, we can discretize it into evenly spaced partitions $(x_1, \dots, x_n)$ and $(y_1, \dots, y_n)$, and then take the difference quotient of adjacent points to approximate spatial derivatives. In other words, we would say that the spatial derivative in the $x$ direction at $(x_i, y_j)$ is given by
+$$
+\begin{align*}
+\hat{\frac{\partial f}{\partial x}}(x_i, y_j) = \frac{f(x_{i + 1}, y_j) - f(x_i, y_j)}{x_{i + 1} - x_i} = \frac{f(x_{i + 1}, y_j) - f(x_i, y_j)}{\Delta x}
+\end{align*}
+$$
+with a similar formula for $y_i$. Using this idea, we can approximate all of the spatial derivatives for our functions $h$, $u$, and $v$. To be particularly clever, since our $u$ and $v$ functions govern the horizontal and vertical velocities of our field, we can imagine that they exist on the boundaries of our cells. This is called an Arakawa C grid, and an image is shown below ([source](https://www.researchgate.net/figure/The-Arakawa-C-grid-layout-of-the-variables-in-our-numerical-scheme-The-domain-is-divided_fig4_267118062)):
+![Arakawa C Grid](image.png)
+As you can see, we take the $u$ values on the horizontal edges of our cells, and the $v$ values on the vertical edges of our cells. The $h$ values, on the other hand, are in the center of our cells. I did this because it was popular for other SWE solvers, though I don't know if there's a particular numerical reason why it is used. This becomes a little difficult because if we have $n$ points in our horizontal partition for the $h$ function, we will have $n + 1$ points in our partition for the $u$ function (since we have the last edge as well). Therefore, we need to rely on boundary conditions to tell us what happens there.
+
+# 
