@@ -46,9 +46,9 @@ $$
 \end{align*}
 $$
 
-with a similar formula for $y_i$. Using this idea, we can approximate all of the spatial derivatives for our functions $h$, $u$, and $v$. To be particularly clever, since our $u$ and $v$ functions govern the horizontal and vertical velocities of our field, we can imagine that they exist on the boundaries of our cells (since fluid flows into and out of our cells). This is called an Arakawa C grid, and an image is shown below ([source](https://www.researchgate.net/figure/The-Arakawa-C-grid-layout-of-the-variables-in-our-numerical-scheme-The-domain-is-divided_fig4_267118062)):
+with a similar formula for $y_i$. Using this idea, we can approximate all of the spatial derivatives for our functions $h$, $u$, and $v$. To be particularly clever, since our $u$ and $v$ functions govern the horizontal and vertical velocities of our field, we can imagine that they exist on the boundaries of our cells (since fluid flows into and out of our cells). This is called an Arakawa C grid, and an image is shown below ([source](https://amps-backup.ucar.edu/information/configuration/wrf_grid_structure.html):
 
-![Arakawa C Grid](https://www.researchgate.net/profile/Andrew-Stewart-14/publication/267118062/figure/fig4/AS:669007766102028@1536515289788/The-Arakawa-C-grid-layout-of-the-variables-in-our-numerical-scheme-The-domain-is-divided.png)
+![Arakawa C Grid](https://amps-backup.ucar.edu/information/configuration/gridstructure.png)
 
 As you can see, we take the $u$ values on the horizontal edges of our cells, and the $v$ values on the vertical edges of our cells. The $h$ values, on the other hand, are in the center of our cells. I did this because it was popular for other SWE solvers, though I don't know if there's a particular numerical reason why it is used. This becomes a little difficult because if we have $n_x$ points in our horizontal partition for the $h$ function, we will have $n_x + 1$ points in our partition for the $u$ function (since we have the last edge as well) and $n_y + 1$ points in our partition for the $v$ function (where $n_y$ is the number of points in our vertical partition). Therefore, we need to rely on boundary conditions to tell us what happens there.
 
