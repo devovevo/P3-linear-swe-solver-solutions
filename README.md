@@ -130,15 +130,15 @@ h_{x_{n_x + 1}, y_i} = h_{0, y_i} \quad \text{ and } \quad h_{x_i, y_{n_y + 1}} 
 \end{align*}
 $$
 
-This differs slightly from the picture, where the ghost cells are be the first row and column. We choose this format because we think it makes more intuitive sense. In other words, we do the flip of what the picture shows, so our ghost cells are at an added last row and column.
+This differs slightly from the picture, where the ghost cells are the first row and column. We choose this format because we think it makes more intuitive sense. In other words, we do the flip of what the picture shows, so our ghost cells are at an added last row and column.
 
 # Getting Started
 
-To start developing your optimized versions, please start by looking at `serial/basic_serial.cpp` and seeing how we have actually implemented all of these concepts numerically. Pay particular attention to indices! This took quite a while to get right, so make sure you fully understand how and why we are iterating through things in the order that we are to get the results that we want.
+To start this project, please take a look at `serial/basic_serial.cpp` and see how we have actually implemented all of these concepts. Pay particular attention to indices! This took quite a while to get right, so make sure you fully understand how and why we are iterating through things in the order that we are to get the results that we want.
 
-Once you understand the code, try making it better! We have included a skeleton `serial/serial.cpp` file to be an optimized version of this basic serial code. Don't spend too much time optimizing this code (it's not worth it), but it will give you some experience playing around with the framework. You may notice a lot of odd looking macros and functions, such as `u(i, j)` and `dh_dx(i, j)`. These are all defined in `common/common.hpp`, and were created solely to make your (and our) lives easier. Definitely take a look at them! Indexing your grids will become MUCH easier.
+Once you understand the code, try making it better! We have included a skeleton `serial/serial.cpp` file so that you can create your own optimized serial version. Don't spend too much time optimizing this code (an hour or so is enough), but it will give you some experience playing around with the framework. You may notice a lot of odd looking macros and functions such as `u(i, j)` and `dh_dx(i, j)`. These are all defined in `common/common.hpp`, and were created solely to make your (and our) lives easier. Definitely take a look at them! Indexing your grids will become MUCH easier.
 
-You should also understand how our runner program works, which is located in `common/main.cpp`. This is what actually executes your script. Some command line options are:
+You should also understand how our runner program works, which is located in `common/main.cpp`. This is what actually executes your script. Some command line options it accepts are:
 - `--scenario`: which scenario to choose for your initial conditions. Can be `water_drop` (default), `dam_break`, or `wave` (for more info, see `common/scenarios.hpp`)
 - `--nx`: the number of grid points in the $x$ direction
 - `--ny`: the number of grid points in the $y$ direction
@@ -146,7 +146,7 @@ You should also understand how our runner program works, which is located in `co
 - `--output`: the file to save your $h$ grid to (defaults to not saving)
 - `--save_iter`: the number of iterations between saving your file
 
-Finally, look at `Makefile`! It will make (lol) compiling everything very easy. If you don't already have a `build/` directory, create one, because that is where it will put your files. The targets it uses are:
+Finally, look at `Makefile`! It will take care of compiling everything correctly for you. If you don't already have a `build/` directory, create one, because that is where it will put your files. The targets it uses are:
 - `basic_serial`
 - `serial`
 - `mpi`
@@ -156,7 +156,7 @@ Finally, look at `Makefile`! It will make (lol) compiling everything very easy. 
 
 # CUDA
 
-The first parallelization task you have is to use CUDA to perform all this computation on the GPU. The skeleton file is located in `gpu/gpu.cpp`. One thing very much worth noting is that we don't transfer our initial $h$, $u$ and $v$ matrices to the GPU when we pass them in to the init function of your code. Therefore, it's up to you to put the data on the GPU for your kernels (hint, the `cudaMalloc` and `cudaMemcpy` will be very useful for this). You also need to implement the `transfer` function, which puts the data on the GPU back into host memory. Another good note is that everything run on the GPU needs to have a `__global__` attribute to let the compiler know (1) that it will be transferred to GPU, and (2) that you will be calling it from your host (CPU) code.
+The first parallelization task you have is to use CUDA to perform all this computation on the GPU. The skeleton file is located in `gpu/gpu.cpp`. One thing very much worth noting is that we don't transfer our initial $h$, $u$ and $v$ matrices to the GPU when we pass them in to the init function of your code. Therefore, it's up to you to put the data on the GPU for your kernels (hint, the `cudaMalloc` and `cudaMemcpy` will be very useful for this). You also need to implement the `transfer` function, copies the data from the GPU back on to the CPU. Another good note is that everything run on the GPU needs to have a `__global__` attribute to let the compiler know (1) that it will be transferred to GPU, and (2) that you will be calling it from your CPU code.
 
 To actually run your code, you will need to allocate a GPU node on pearlmutter. To see how to do this, you can go to [this](https://docs.nersc.gov/jobs/interactive/) link on NERSC to learn more, or just use `salloc --nodes 1 --qos interactive --time 01:00:00 --constraint gpu --gpus 1 --account mxxxx`, where you fill in `mxxxx` with the account Professor Bindel has. If you want to use `sbatch`, see [this](https://www.nersc.gov/assets/Uploads/Building-and-running-GPU-applications-on-Perlmutter.pdf) presentation for the options you need. I've also included an example file in `gpu/job-gpu`.
 
@@ -164,7 +164,7 @@ To actually run your code, you will need to allocate a GPU node on pearlmutter. 
 
 The next parallelization task you have is to use MPI to perform this computation on multiple separate computers (and potentially multiple local threads on each computer). The skeleton file for this task is located in `mpi/mpi.cpp`. Similar to the CUDA task, we don't allocate memory on all nodes for our initial $h$, $u$ and $v$ grids, and only do this for the node with rank 0. Therefore, in your init function you need to transfer the corresponding sections of your grids to each processor (hint, the `MPI_Scatterv` function might be very helpful for this). You will also need to gather all of the different pieces of the grid in the `transfer` and put them back on the node with rank 0 (hint, `MPI_Gatherv` is useful for this).
 
-To run your MPI application, you can see [this](https://docs.nersc.gov/development/programming-models/mpi/cray-mpich/) article on NERSC, or TLDR use `salloc --nodes N --qos interactive --time 01:00:00 --constraint gpu --gpus 1 --account mxxxx`, where you fill in `N` with the number of nodes you want to use. Then, to run your application, you can follow the guide, or again TLDR use `srun -N N -n n ./mpi`, where `N` is the number of nodes you want to use, and `n` is the number of threads you want per node.
+To run your MPI application, you can see [this](https://docs.nersc.gov/development/programming-models/mpi/cray-mpich/) article on NERSC, or TLDR use `salloc --nodes N --qos interactive --time 01:00:00 --constraint gpu --gpus 1 --account mxxxx`, where you fill in `N` with the number of nodes you want to use. Then, to run your application, you can follow the guide, or again TLDR use `srun -N N -n n ./mpi`, where `N` is the number of nodes you want to use and `n` is the number of threads you want per node.
 
 # Utilities
 
