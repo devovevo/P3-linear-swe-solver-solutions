@@ -46,7 +46,7 @@ $$
 \end{align*}
 $$
 
-with a similar formula for $y_i$. Using this idea, we can approximate all of the spatial derivatives for our functions $h$, $u$, and $v$. To be particularly clever, since our $u$ and $v$ functions govern the horizontal and vertical velocities of our field, we can imagine that they exist on the boundaries of our cells (since fluid flows into and out of our cells). This is called an Arakawa C grid, and an image is shown below ([source](https://amps-backup.ucar.edu/information/configuration/wrf_grid_structure.html):
+with a similar formula for $y_i$. Using this idea, we can approximate all of the spatial derivatives for our functions $h$, $u$, and $v$. To be particularly clever, since our $u$ and $v$ functions govern the horizontal and vertical velocities of our field, we can imagine that they exist on the boundaries of our cells (since fluid flows into and out of our cells). This is called an Arakawa C grid, and an image is shown below ([source](https://amps-backup.ucar.edu/information/configuration/wrf_grid_structure.html)):
 
 ![Arakawa C Grid](https://amps-backup.ucar.edu/information/configuration/gridstructure.png)
 
