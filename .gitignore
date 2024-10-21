@@ -1,11 +1,3 @@
-swe.py
-*.out
-*.o
-*.gif
-
-serial-files/serial
-gpu-files/gpu
-mpi-files/mpi
-
-env/
 .vscode/
+
+build/
