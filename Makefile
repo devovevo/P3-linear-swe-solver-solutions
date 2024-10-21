@@ -1,14 +1,39 @@
-CPP=g++
-OPTFLAGS=-O3 -ffast-math
+NVCC=nvcc
+NVCCFLAGS=-DCUDA
+
+CPP=CC
 CFLAGS=-lm
+OPTFLAGS=-O3 -ffast-math
+
+MPIFLAGS=-DMPI
+
 DEBUGFLAGS=-g -pg
+
 PYTHON=python3
 
-serial/serial: common/main.cpp common/scenarios.cpp serial/basic_serial.cpp
-	$(CPP) $^ -o $@ $(CFLAGS) $(OPTFLAGS)
+all: mpi gpu basic_serial
+
+mpi: build/mpi
+gpu: build/gpu
+serial: build/serial
+basic_serial: build/basic_serial
+
+build/mpi: common/main.cpp common/scenarios.cpp mpi/mpi.cpp
+	$(CPP) $^ -o $@ $(MPIFLAGS) $(CFLAGS) $(OPTFLAGS)
+
+build/gpu: common/main.cpp common/scenarios.cpp gpu/gpu.cu
+	$(NVCC) $^ -o $@ $(NVCCFLAGS)
+
+build/serial: common/main.cpp common/scenarios.cpp serial/serial.cpp
+	$(CPP) $^ -o $@ $(CFLAGS) $(COPTFLAGS)
+
+build/basic_serial: common/main.cpp common/scenarios.cpp serial/basic_serial.cpp
+	$(CPP) $^ -o $@ $(CFLAGS) $(COPTFLAGS)
 
 .PHONY: clean
+
+clean-animations:
+	rm -f build/*.gif
+
 clean:
-	rm -f serial/serial
-	rm -f gpu/gpu
-	rm -f mpi/mpi
+	rm -f build/*

@@ -20,16 +20,16 @@ void init(double *h0, double *u0, double *v0, double length_, double width_, int
     ny = ny_;
 
     dh = (double *)calloc(nx * ny, sizeof(double));
-    du = (double *)calloc((nx + 1) * ny, sizeof(double));
-    dv = (double *)calloc(nx * (ny + 1), sizeof(double));
+    du = (double *)calloc(nx * ny, sizeof(double));
+    dv = (double *)calloc(nx * ny, sizeof(double));
 
     dh1 = (double *)calloc(nx * ny, sizeof(double));
-    du1 = (double *)calloc((nx + 1) * ny, sizeof(double));
-    dv1 = (double *)calloc(nx * (ny + 1), sizeof(double));
+    du1 = (double *)calloc(nx * ny, sizeof(double));
+    dv1 = (double *)calloc(nx * ny, sizeof(double));
 
     dh2 = (double *)calloc(nx * ny, sizeof(double));
-    du2 = (double *)calloc((nx + 1) * ny, sizeof(double));
-    dv2 = (double *)calloc(nx * (ny + 1), sizeof(double));
+    du2 = (double *)calloc(ny * ny, sizeof(double));
+    dv2 = (double *)calloc(nx * ny, sizeof(double));
 
     H = H_;
     g = g_;
@@ -53,7 +53,7 @@ void compute_dh()
 
 void compute_du()
 {
-    for (int i = 0; i < nx + 1; i++)
+    for (int i = 0; i < nx; i++)
     {
         for (int j = 0; j < ny; j++)
         {
@@ -66,10 +66,39 @@ void compute_dv()
 {
     for (int i = 0; i < nx; i++)
     {
-        for (int j = 0; j < ny + 1; j++)
+        for (int j = 0; j < ny; j++)
         {
             dv(i, j) = -g * dh_dy(i, j);
         }
+    }
+}
+
+void multistep(double a1, double a2, double a3)
+{
+    for (int i = 0; i < nx; i++)
+    {
+        for (int j = 0; j < ny; j++)
+        {
+            h(i, j) += (a1 * dh(i, j) + a2 * dh1(i, j) + a3 * dh2(i, j)) * dt;
+            u(i + 1, j) += (a1 * du(i, j) + a2 * du1(i, j) + a3 * du2(i, j)) * dt;
+            v(i, j + 1) += (a1 * dv(i, j) + a2 * dv1(i, j) + a3 * dv2(i, j)) * dt;
+        }
+    }
+}
+
+void compute_ghost_horizontal()
+{
+    for (int j = 0; j < ny; j++)
+    {
+        h(nx, j) = h(0, j);
+    }
+}
+
+void compute_ghost_vertical()
+{
+    for (int i = 0; i < nx; i++)
+    {
+        h(i, ny) = h(i, 0);
     }
 }
 
@@ -78,11 +107,6 @@ void compute_boundaries_horizontal()
     for (int j = 0; j < ny; j++)
     {
         u(0, j) = u(nx, j);
-        u(nx + 1, j) = u(1, j);
-
-        v(nx, j) = v(0, j);
-
-        h(nx, j) = h(0, j);
     }
 }
 
@@ -90,19 +114,41 @@ void compute_boundaries_vertical()
 {
     for (int i = 0; i < nx; i++)
     {
-        u(i, ny) = u(i, 0);
-
         v(i, 0) = v(i, ny);
-        v(i, ny + 1) = v(i, 1);
-
-        h(i, ny) = h(i, 0);
     }
+}
+
+void swap_buffers()
+{
+    double *tmp;
+
+    tmp = dh2;
+    dh2 = dh1;
+    dh1 = dh;
+    dh = tmp;
+
+    tmp = du2;
+    du2 = du1;
+    du1 = du;
+    du = tmp;
+
+    tmp = dv2;
+    dv2 = dv1;
+    dv1 = dv;
+    dv = tmp;
 }
 
 int t = 0;
 
-void euler()
+void step()
 {
+    compute_ghost_horizontal();
+    compute_ghost_vertical();
+
+    compute_dh();
+    compute_du();
+    compute_dv();
+
     double a1, a2, a3;
 
     if (t == 0)
@@ -121,44 +167,7 @@ void euler()
         a3 = 5.0 / 12.0;
     }
 
-    for (int i = 0; i < nx; i++)
-    {
-        for (int j = 0; j < ny; j++)
-        {
-            h(i, j) += (a1 * dh(i, j) + a2 * dh1(i, j) + a3 * dh2(i, j)) * dt;
-            u(i + 1, j) += (a1 * du(i, j) + a2 * du1(i, j) + a3 * du2(i, j)) * dt;
-            v(i, j + 1) += (a1 * dv(i, j) + a2 * dv1(i, j) + a3 * dv2(i, j)) * dt;
-        }
-    }
-}
-
-void swap_buffers()
-{
-    double *tmp;
-
-    tmp = dh2;
-    dh1 = dh;
-    dh2 = dh1;
-    dh = tmp;
-
-    tmp = du2;
-    du1 = du;
-    du2 = du1;
-    du = tmp;
-
-    tmp = dv2;
-    dv1 = dv;
-    dv2 = dv1;
-    dv = tmp;
-}
-
-void step()
-{
-    compute_dh();
-    compute_du();
-    compute_dv();
-
-    euler();
+    multistep(a1, a2, a3);
 
     compute_boundaries_horizontal();
     compute_boundaries_vertical();
@@ -168,7 +177,10 @@ void step()
     t++;
 }
 
-void transfer(double *h) {}
+void transfer(double *h)
+{
+    return;
+}
 
 void free_memory()
 {

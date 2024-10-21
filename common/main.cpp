@@ -7,12 +7,12 @@
 #include <mpi.h>
 #endif
 
-#include "solver.hpp"
-
 #include "scenarios.hpp"
+#include "solver.hpp"
 
 int main(int argc, char **argv)
 {
+
     int length = 1.0e7, width = 1.0e7, nx = 256, ny = 258, num_iterations = 1000, save_iter = 20;
     double depth = 100.0, g = 1.0, r = 2.0e5, max_height = 10.0, dt = 100.0;
 
@@ -20,6 +20,12 @@ int main(int argc, char **argv)
     bool output = false;
 
     int rank = 0, num_procs = 1;
+
+#ifdef MPI
+    MPI_Init(&argc, &argv);
+    MPI_Comm_size(MPI_COMM_WORLD, &num_procs);
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+#endif
 
     int cur_arg = 1;
     int num_args = argc - 1;
@@ -87,37 +93,47 @@ int main(int argc, char **argv)
         num_args -= 2;
     }
 
-    double *h = (double *)calloc((nx + 1) * (ny + 1), sizeof(double));
-    double *u = (double *)calloc((nx + 2) * (ny + 1), sizeof(double));
-    double *v = (double *)calloc((nx + 1) * (ny + 2), sizeof(double));
+    double *h = nullptr;
+    double *u = nullptr;
+    double *v = nullptr;
 
-    if (strcmp(scenario, "water_drop") == 0)
+    if (rank == 0)
     {
-        water_drop(length, width, nx, ny, r, max_height, h, u, v);
+        h = (double *)calloc((nx + 1) * (ny + 1), sizeof(double));
+        u = (double *)calloc((nx + 2) * ny, sizeof(double));
+        v = (double *)calloc(nx * (ny + 2), sizeof(double));
+
+        if (strcmp(scenario, "water_drop") == 0)
+        {
+            printf("Length: %d, width %d, nx %d, ny %d, r %f, max_height %f, h %p, u %p, v %p\n", length, width, nx, ny, r, max_height, h, u, v);
+            water_drop(length, width, nx, ny, r, max_height, h, u, v);
+        }
+        else if (strcmp(scenario, "dam_break") == 0)
+        {
+            dam_break(length, width, nx, ny, r, max_height, h, u, v);
+        }
+        else if (strcmp(scenario, "wave") == 0)
+        {
+            wave(length, width, nx, ny, max_height, h, u, v);
+        }
+        else if (strcmp(scenario, "river") == 0)
+        {
+            river(length, width, nx, ny, max_height, h, u, v);
+        }
+        else
+        {
+            fprintf(stderr, "Unknown scenario: %s\n", scenario);
+            return 1;
+        }
     }
-    else if (strcmp(scenario, "dam_break") == 0)
-    {
-        dam_break(length, width, nx, ny, r, max_height, h, u, v);
-    }
-    else if (strcmp(scenario, "wave") == 0)
-    {
-        wave(length, width, nx, ny, max_height, h, u, v);
-    }
-    else if (strcmp(scenario, "river") == 0)
-    {
-        river(length, width, nx, ny, max_height, h, u, v);
-    }
-    else
-    {
-        fprintf(stderr, "Unknown scenario: %s\n", scenario);
-        return 1;
-    }
+
+    printf("Hello World from rank %d\n", rank);
 
     init(h, u, v, length, width, nx, ny, depth, g, dt, rank, num_procs);
 
     FILE *fptr;
 
-    if (output && rank == 0)
+    if (rank == 0 && output)
     {
         fptr = fopen(output_file, "w");
 
@@ -139,24 +155,35 @@ int main(int argc, char **argv)
 
     for (int i = 0; i < num_iterations; i++)
     {
-        step();
-
         if (output && i % save_iter == 0)
         {
             transfer(h);
-            fwrite(h, sizeof(double), (nx + 1) * (ny + 1), fptr);
+
+            if (rank == 0)
+            {
+                fwrite(h, sizeof(double), (nx + 1) * (ny + 1), fptr);
+            }
         }
+
+        step();
     }
+
+#ifdef MPI
+    MPI_Finalize();
+#endif
 
     free_memory();
 
-    free(h);
-    free(u);
-    free(v);
-
-    if (output)
+    if (rank == 0)
     {
-        fclose(fptr);
+        free(h);
+        free(u);
+        free(v);
+
+        if (output)
+        {
+            fclose(fptr);
+        }
     }
 
     return 0;

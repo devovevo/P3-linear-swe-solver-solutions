@@ -24,13 +24,13 @@ def main(file='serial.out', animation_file='anim.gif'):
     num_i = header['num_iter'][0]
     save_i = header['save_iter'][0]
 
-    num_frames = num_i // save_i
+    num_frames = max(num_i // save_i, 1)
 
     dx = Lx / nx
     dy = Ly / ny
 
     h = np.fromfile(file, offset=header_t.itemsize, dtype='f8').reshape((num_frames, nx + 1, ny + 1))
-    hmax = np.max(np.abs(h[0, :, :]))
+    hmax = np.max(np.abs(h[0, :-1, :-1]))
 
     hx = (-Lx/2 + dx/2.0 + np.arange(nx)*dx)[:, np.newaxis]
     hy = (-Ly/2 + dy/2.0 + np.arange(ny)*dy)[np.newaxis, :]
@@ -52,15 +52,16 @@ def main(file='serial.out', animation_file='anim.gif'):
         
         ax1.cla()
         ax1.contourf(X/Lx, Y/Ly, Z, cmap=plt.cm.RdBu, levels=colorlevels*hmax)
-        ax1.title('3d color plot of h')
+        ax1.set_title(f"h(x, y) for t = {i*save_i}")
 
         ax2.cla()
         ax2.contourf(X/Lx, Y/Ly, Z, cmap=plt.cm.RdBu, levels=colorlevels*hmax)
-        plt.title('2d color plot of h')
+        ax2.set_title(f"h(x, y) for t = {i*save_i}")
 
         ax3.cla()
         ax3.plot(hx/Lx, h[i, :-1, :-1][:, ny//2])
-        plt.title('plot of h along y=0')
+        ax3.set_title(f"h(x, 0) for t = {i*save_i}")
+        ax3.set_ylim(-hmax, hmax)
 
     animation_fig = manimation.FuncAnimation(fig, update_anim, frames=num_frames, interval=10)
     animation_fig.save(animation_file)
