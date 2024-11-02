@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <time.h>
 
 #ifdef MPI
 #include <mpi.h>
@@ -105,7 +106,6 @@ int main(int argc, char **argv)
 
         if (strcmp(scenario, "water_drop") == 0)
         {
-            printf("Length: %d, width %d, nx %d, ny %d, r %f, max_height %f, h %p, u %p, v %p\n", length, width, nx, ny, r, max_height, h, u, v);
             water_drop(length, width, nx, ny, r, max_height, h, u, v);
         }
         else if (strcmp(scenario, "dam_break") == 0)
@@ -127,9 +127,12 @@ int main(int argc, char **argv)
         }
     }
 
-    printf("Hello World from rank %d\n", rank);
+    clock_t init_start = clock();
 
     init(h, u, v, length, width, nx, ny, depth, g, dt, rank, num_procs);
+
+    clock_t init_end = clock();
+    fprintf(stderr, "Initialization time for rank %d: %f\n", rank, (double)(init_end - init_start) / CLOCKS_PER_SEC);
 
     FILE *fptr;
 
@@ -153,6 +156,8 @@ int main(int argc, char **argv)
         fwrite(&save_iter, sizeof(int), 1, fptr);
     }
 
+    clock_t start = clock();
+
     for (int i = 0; i < num_iterations; i++)
     {
         if (output && i % save_iter == 0)
@@ -168,11 +173,17 @@ int main(int argc, char **argv)
         step();
     }
 
+    clock_t end = clock();
+    fprintf(stderr, "Execution time for rank %d: %f\n", rank, (double)(end - start) / CLOCKS_PER_SEC);
+
 #ifdef MPI
     MPI_Finalize();
 #endif
 
+    clock_t free_start = clock();
     free_memory();
+    clock_t free_end = clock();
+    fprintf(stderr, "Free memory time for rank %d: %f\n", rank, (double)(free_end - free_start) / CLOCKS_PER_SEC);
 
     if (rank == 0)
     {
