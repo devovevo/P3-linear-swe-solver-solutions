@@ -3,8 +3,6 @@
 
 #include <stdio.h>
 
-#include <math.h>
-
 #include "../common/common.hpp"
 #include "../common/solver.hpp"
 
