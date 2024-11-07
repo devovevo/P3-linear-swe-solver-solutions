@@ -6,6 +6,9 @@
 #include "../common/common.hpp"
 #include "../common/solver.hpp"
 
+#define BLOCK_SIZE_X 32
+#define BLOCK_SIZE_Y 32
+
 int nx, ny;
 
 double *h, *u, *v, *dh, *du, *dv, *dh1, *du1, *dv1, *dh2, *du2, *dv2;
@@ -47,8 +50,8 @@ void init(double *h0, double *u0, double *v0, double length_, double width_, int
 
 void __global__ compute_derivs(double *h, double *u, double *v, double *du, double *dv, double *dh, int nx, int ny, double dx, double dy, double g, double H)
 {
-    int i = threadIdx.x + blockIdx.x * blockDim.x;
-    int j = threadIdx.y + blockIdx.y * blockDim.y;
+    const int i = blockIdx.y * BLOCK_SIZE_Y + (threadIdx.x / BLOCK_SIZE_X);
+    const int j = blockIdx.x * BLOCK_SIZE_X + (threadIdx.x % BLOCK_SIZE_X);
 
     if (i >= nx || j >= ny)
         return;
@@ -70,8 +73,8 @@ void __global__ compute_derivs(double *h, double *u, double *v, double *du, doub
 
 void __global__ update_fields(double *h, double *u, double *v, double *dh, double *du, double *dv, double *dh1, double *du1, double *dv1, double *dh2, double *du2, double *dv2, int nx, int ny, double dx, double dy, double dt, double a1, double a2, double a3)
 {
-    int i = threadIdx.x + blockIdx.x * blockDim.x;
-    int j = threadIdx.y + blockIdx.y * blockDim.y;
+    const int i = blockIdx.y * BLOCK_SIZE_Y + (threadIdx.x / BLOCK_SIZE_X);
+    const int j = blockIdx.x * BLOCK_SIZE_X + (threadIdx.x % BLOCK_SIZE_X);
 
     if (i >= nx || j >= ny)
         return;
@@ -192,8 +195,8 @@ int t = 0;
 
 void step()
 {
-    dim3 threadsPerBlock(16, 16);
-    dim3 numBlocks(nx / threadsPerBlock.x + 1, ny / threadsPerBlock.y + 1);
+    dim3 threadsPerBlock(BLOCK_SIZE_X, BLOCK_SIZE_Y);
+    dim3 numBlocks(ceil(nx / threadsPerBlock.x), ceil(ny / threadsPerBlock.y));
 
     double a1, a2, a3;
 
