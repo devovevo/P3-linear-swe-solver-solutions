@@ -212,7 +212,7 @@ __global__ void kernel(float *h, float *u, float *v, float *dh1, float *du1, flo
 
         const int local_idx = i / blockDim.x;
 
-        if (grid_idx < 0 || grid_idx)
+        if (grid_x < 0 || grid_y < 0 || grid_x >= nx || grid_y >= ny)
         {
             continue;
         }
