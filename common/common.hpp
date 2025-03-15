@@ -20,4 +20,6 @@
 #define du_dx(i, j) (u(i + 1, j) - u(i, j)) / dx
 #define dv_dy(i, j) (v(i, j + 1) - v(i, j)) / dy
 
+#define CEIL_DIV(x, y) (x + y - 1) / y
+
 #define mod(x, N) (x + N) % N
