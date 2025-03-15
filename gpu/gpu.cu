@@ -4,9 +4,9 @@
 #include "../common/common.hpp"
 #include "../common/solver.hpp"
 
-#define block_h(i, j) block_h[(i) * ((block_dims[1] + 2 * BLOCK_HALO_RAD)) + (j)]
-#define block_u(i, j) block_u[(i) * ((block_dims[1] + 2 * BLOCK_HALO_RAD)) + (j)]
-#define block_v(i, j) block_v[(i) * ((block_dims[1] + 2 * BLOCK_HALO_RAD)) + (j)]
+#define block_h(i, j) block_h[(i) * (halo_block_dims[1]) + (j)]
+#define block_u(i, j) block_u[(i) * (halo_block_dims[1]) + (j)]
+#define block_v(i, j) block_v[(i) * (halo_block_dims[1]) + (j)]
 
 #define block_dh_dx(i, j) (block_h(i + 1, j) - block_h(i, j)) / dx
 #define block_dh_dy(i, j) (block_h(i, j + 1) - h(i, j)) / dy
@@ -106,6 +106,7 @@ __global__ void kernel(float *h, float *u, float *v, float *dh1, float *du1, flo
     // direction, we divide total num of points by the number of blocks
     // in each direction
     const unsigned int block_dims[2] = {nx / gridDim.x, ny / gridDim.y};
+    const unsigned int halo_block_dims[2] = {block_dims[0] + 2 * BLOCK_HALO_RAD, block_dims[1] + 2 * BLOCK_HALO_RAD};
 
     // Here, we set up our local blocks fields using the maximum amount of memory
     // that we can share. We make an external shared memory bank called s to
@@ -113,28 +114,30 @@ __global__ void kernel(float *h, float *u, float *v, float *dh1, float *du1, flo
 
     extern __shared__ float s[];
 
-    float *block_h = &s[0 * (block_dims[0] + 2 * BLOCK_HALO_RAD) * (block_dims[1] + 2 * BLOCK_HALO_RAD)];
-    float *block_u = &s[1 * (block_dims[0] + 2 * BLOCK_HALO_RAD) * (block_dims[1] + 2 * BLOCK_HALO_RAD)];
-    float *block_v = &s[2 * (block_dims[0] + 2 * BLOCK_HALO_RAD) * (block_dims[1] + 2 * BLOCK_HALO_RAD)];
+    float *block_h = &s[0 * halo_block_dims[0] * halo_block_dims[1]];
+    float *block_u = &s[1 * halo_block_dims[0] * halo_block_dims[1]];
+    float *block_v = &s[2 * halo_block_dims[0] * halo_block_dims[1]];
 
     // We make our gradient fields be on a per thread basis, as we don't need
     // to share this information, allowing us to have a larger block size
-    float thread_dh[MAX_THREAD_DIM * MAX_THREAD_DIM];
-    float thread_du[MAX_THREAD_DIM * MAX_THREAD_DIM];
-    float thread_dv[MAX_THREAD_DIM * MAX_THREAD_DIM];
+    float thread_derivs[MAX_THREAD_DIM * MAX_THREAD_DIM * 3];
+    float thread_derivs1[MAX_THREAD_DIM * MAX_THREAD_DIM * 3]
 
-    float thread_dh1[MAX_THREAD_DIM * MAX_THREAD_DIM];
-    float thread_du1[MAX_THREAD_DIM * MAX_THREAD_DIM];
-    float thread_dv1[MAX_THREAD_DIM * MAX_THREAD_DIM];
+        // float thread_du[MAX_THREAD_DIM * MAX_THREAD_DIM];
+        // float thread_dv[MAX_THREAD_DIM * MAX_THREAD_DIM];
 
-    // printf("Thread %d of block (%d, %d) reporting for duty! The block dims are (%d, %d).\n", threadIdx.x, blockIdx.x, blockIdx.y, block_dims[0], block_dims[1]);
+        // float thread_dh1[MAX_THREAD_DIM * MAX_THREAD_DIM];
+        // float thread_du1[MAX_THREAD_DIM * MAX_THREAD_DIM];
+        // float thread_dv1[MAX_THREAD_DIM * MAX_THREAD_DIM];
 
-    // We initialize our local block fields here by reading in from the
-    // corresponding grid fields
-    for (int i = threadIdx.x; i < (block_dims[0] + 2 * BLOCK_HALO_RAD) * (block_dims[1] + 2 * BLOCK_HALO_RAD); i += blockDim.x)
+        // printf("Thread %d of block (%d, %d) reporting for duty! The block dims are (%d, %d).\n", threadIdx.x, blockIdx.x, blockIdx.y, block_dims[0], block_dims[1]);
+
+        // We initialize our local block fields here by reading in from the
+        // corresponding grid fields
+        for (int i = threadIdx.x; i < halo_block_dims[0] * halo_block_dims[1]; i += blockDim.x)
     {
-        int thread_x = i / (block_dims[0] + 2 * BLOCK_HALO_RAD);
-        int thread_y = i % (block_dims[0] + 2 * BLOCK_HALO_RAD);
+        int thread_x = i / halo_block_dims[0];
+        int thread_y = i % halo_block_dims[0];
 
         int grid_x = mod(blockIdx.x * block_dims[0] + thread_x - BLOCK_HALO_RAD, nx);
         int grid_y = mod(blockIdx.y * block_dims[1] + thread_y - BLOCK_HALO_RAD, ny);
@@ -147,9 +150,9 @@ __global__ void kernel(float *h, float *u, float *v, float *dh1, float *du1, flo
 
         // printf("Thread %d of block (%d, %d) is loading in from grid (%d, %d) into block (%d, %d) and local idx %d. The corresponding block h value is %f and the grid h value is %f.\n", threadIdx.x, blockIdx.x, blockIdx.y, grid_x, grid_y, thread_x, thread_y, local_idx, block_h(thread_x, thread_y), h(grid_x, grid_y));
 
-        thread_dh1[local_idx] = dh1(grid_x, grid_y);
-        thread_du1[local_idx] = du1(grid_x, grid_y);
-        thread_dv1[local_idx] = dv1(grid_x, grid_y);
+        thread_derivs[local_idx * 3 + 0] = dh1(grid_x, grid_y);
+        thread_derivs[local_idx * 3 + 1] = du1(grid_x, grid_y);
+        thread_derivs[local_idx * 3 + 2] = dh1(grid_x, grid_y);
     }
 
     __syncthreads();
@@ -164,9 +167,9 @@ __global__ void kernel(float *h, float *u, float *v, float *dh1, float *du1, flo
 
             int local_idx = i / blockDim.x;
 
-            thread_dh[local_idx] = -H * (block_du_dx(thread_x, thread_y) + block_dv_dy(thread_x, thread_y));
-            thread_du[local_idx] = -g * block_dh_dx(thread_x, thread_y);
-            thread_dv[local_idx] = -g * dh_dy(thread_x, thread_y);
+            // thread_dh[local_idx] = -H * (block_du_dx(thread_x, thread_y) + block_dv_dy(thread_x, thread_y));
+            // thread_du[local_idx] = -g * block_dh_dx(thread_x, thread_y);
+            // thread_dv[local_idx] = -g * dh_dy(thread_x, thread_y);
         }
 
         __syncthreads();
@@ -211,10 +214,10 @@ __global__ void kernel(float *h, float *u, float *v, float *dh1, float *du1, flo
     }
 
     // Finally we write back to the grid
-    for (int i = threadIdx.x; i < (block_dims[0] + 2 * BLOCK_HALO_RAD) * (block_dims[1] + 2 * BLOCK_HALO_RAD); i += blockDim.x)
+    for (int i = threadIdx.x; i < halo_block_dims[0] * halo_block_dims[1]; i += blockDim.x)
     {
-        int thread_x = i / (block_dims[0] + 2 * BLOCK_HALO_RAD);
-        int thread_y = i % (block_dims[0] + 2 * BLOCK_HALO_RAD);
+        int thread_x = i / halo_block_dims[0];
+        int thread_y = i % halo_block_dims[0];
 
         // int grid_x = block_x * block_dims[0] + thread_x - BLOCK_HALO_RAD;
         // int grid_y = block_y * block_dims[1] + thread_y - BLOCK_HALO_RAD;
