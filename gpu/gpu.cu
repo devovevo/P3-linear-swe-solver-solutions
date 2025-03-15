@@ -212,22 +212,20 @@ __global__ void kernel(float *h, float *u, float *v, float *dh1, float *du1, flo
 
         const int local_idx = i / blockDim.x;
 
-        // if (grid_x < 0 || grid_y < 0 || grid_x >= nx || grid_y >= ny)
-        // {
-        //     continue;
-        // }
+        if (grid_x < 0 || grid_y < 0 || grid_x >= nx || grid_y >= ny)
+        {
+            continue;
+        }
 
         // printf("Thread %d of block (%d, %d) is loading in from block (%d, %d) and local idx %d and writing back into grid (%d, %d). The corresponding block h value is %f and the grid h value is %f.\n", threadIdx.x, blockIdx.x, blockIdx.y, thread_x, thread_y, local_idx, grid_x, grid_y, block_h(thread_x, thread_y), h(grid_x, grid_y));
 
-        block_h(thread_x, thread_y) = h(grid_x, grid_y);
-        block_u(thread_x, thread_y) = u(grid_x, grid_y);
-        block_v(thread_x, thread_y) = v(grid_x, grid_y);
+        h(grid_x, grid_y) = block_h(thread_x, thread_y);
+        // u(grid_x, grid_y) = block_u(thread_x, thread_y);
+        // v(grid_x, grid_y) = block_v(thread_x, thread_y);
 
-        // printf("Thread %d of block (%d, %d) is loading in from grid (%d, %d) into block (%d, %d) and local idx %d. The corresponding block h value is %f and the grid h value is %f.\n", threadIdx.x, blockIdx.x, blockIdx.y, grid_x, grid_y, thread_x, thread_y, local_idx, block_h(thread_x, thread_y), h(grid_x, grid_y));
-
-        thread_dh1[local_idx] = dh1(grid_x, grid_y);
-        thread_du1[local_idx] = du1(grid_x, grid_y);
-        thread_dv1[local_idx] = dv1(grid_x, grid_y);
+        // dh1(grid_x, grid_y) = thread_dh1[local_idx];
+        // du1(grid_x, grid_y) = thread_du1[local_idx];
+        // dv1(grid_x, grid_y) = thread_dv1[local_idx];
     }
 }
 
