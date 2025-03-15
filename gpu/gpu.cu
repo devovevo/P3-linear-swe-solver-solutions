@@ -207,8 +207,8 @@ __global__ void kernel(float *h, float *u, float *v, float *dh1, float *du1, flo
         int thread_x = i / halo_block_dims[0];
         int thread_y = i % halo_block_dims[0];
 
-        int grid_x = block_x * block_dims[0] + thread_x - BLOCK_HALO_RAD;
-        int grid_y = block_y * block_dims[1] + thread_y - BLOCK_HALO_RAD;
+        int grid_x = blockIdx.x * block_dims[0] + thread_x - BLOCK_HALO_RAD;
+        int grid_y = blockIdx.y * block_dims[1] + thread_y - BLOCK_HALO_RAD;
 
         int local_idx = i / blockDim.x;
 
