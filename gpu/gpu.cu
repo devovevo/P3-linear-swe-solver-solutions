@@ -23,7 +23,7 @@
 #define thread_dv1(i, j) thread_dv1[(i) * MAX_THREAD_DIM + (j)]
 
 #define BLOCK_HALO_RAD 10
-#define MAX_THREAD_DIM 4
+#define MAX_THREAD_DIM 1
 
 int nx, ny;
 
@@ -67,7 +67,7 @@ __device__ inline void swap(float *p1, float *p2, int n)
     }
 }
 
-__global__ void kernel(float *h, float *u, float *v, float *dh1, float *du1, float *dv1, int nx, int ny, int t, float dx, float dy, float dt, float g, float H)
+__global__ void kernel(float *const h, float *const u, float *const v, float *const dh1, float *const du1, float *const dv1, int nx, int ny, int t, float dx, float dy, float dt, float g, float H)
 {
     // To find how many grid points this block is responsible for in each
     // direction, we divide total num of points by the number of blocks
@@ -169,29 +169,29 @@ __global__ void kernel(float *h, float *u, float *v, float *dh1, float *du1, flo
     }
 
     // Finally we write back to the grid
-    // for (int i = threadIdx.x; i < halo_block_dims[0] * halo_block_dims[1]; i += blockDim.x)
-    // {
-    //     const int thread_x = i / halo_block_dims[0];
-    //     const int thread_y = i % halo_block_dims[0];
+    for (int i = threadIdx.x; i < halo_block_dims[0] * halo_block_dims[1]; i += blockDim.x)
+    {
+        const int thread_x = i / halo_block_dims[0];
+        const int thread_y = i % halo_block_dims[0];
 
-    //     const int grid_x = blockIdx.x * block_dims[0] + thread_x - BLOCK_HALO_RAD;
-    //     const int grid_y = blockIdx.y * block_dims[1] + thread_y - BLOCK_HALO_RAD;
+        const int grid_x = blockIdx.x * block_dims[0] + thread_x - BLOCK_HALO_RAD;
+        const int grid_y = blockIdx.y * block_dims[1] + thread_y - BLOCK_HALO_RAD;
 
-    //     const int local_idx = i / blockDim.x;
+        const int local_idx = i / blockDim.x;
 
-    //     if (grid_x < 0 || grid_y < 0 || grid_x >= nx || grid_y >= ny)
-    //     {
-    //         continue;
-    //     }
+        if (grid_x < 0 || grid_y < 0 || grid_x >= nx || grid_y >= ny)
+        {
+            continue;
+        }
 
-    //     h(grid_x, grid_y) = block_h(thread_x, thread_y);
-    //     u(grid_x, grid_y) = block_u(thread_x, thread_y);
-    //     v(grid_x, grid_y) = block_v(thread_x, thread_y);
+        h(grid_x, grid_y) = block_h(thread_x, thread_y);
+        u(grid_x, grid_y) = block_u(thread_x, thread_y);
+        v(grid_x, grid_y) = block_v(thread_x, thread_y);
 
-    //     dh1(grid_x, grid_y) = thread_dh1[local_idx];
-    //     du1(grid_x, grid_y) = thread_du1[local_idx];
-    //     dv1(grid_x, grid_y) = thread_dv1[local_idx];
-    // }
+        dh1(grid_x, grid_y) = thread_dh1[local_idx];
+        du1(grid_x, grid_y) = thread_du1[local_idx];
+        dv1(grid_x, grid_y) = thread_dv1[local_idx];
+    }
 }
 
 int t = 0;
