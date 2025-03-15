@@ -16,9 +16,7 @@
 #define thread_du1(i, j) thread_du1[(i) * MAX_THREAD_DIM + (j)]
 #define thread_dv1(i, j) thread_dv1[(i) * MAX_THREAD_DIM + (j)]
 
-#define MAX_BLOCK_DIM 48
 #define BLOCK_HALO_RAD 8
-
 #define MAX_THREAD_DIM 2
 
 int nx, ny;
@@ -119,9 +117,18 @@ __global__ void kernel(float *h, float *u, float *v, float *dh1, float *du1, flo
     // in each direction
     const unsigned int block_dims[2] = {nx / gridDim.x, ny / gridDim.y};
     const unsigned int halo_block_dims[2] = {block_dims[0] + 2 * BLOCK_HALO_RAD, block_dims[1] + 2 * BLOCK_HALO_RAD};
+    const unsigned int num_points = halo_block_dims[0] * halo_block_dims[1];
 
     // Here, we set up our local blocks fields using the maximum amount of memory
-    // that we can share
+    // that we can share. We make an external shared memory bank called s to
+    // store into.
+
+    extern __shared__ float s[];
+
+    float *block_h = s[0 * num_points];
+    float *block_u = s[1 * num_points];
+    float *block_v = s[2 * num_points];
+
     __shared__ float block_h[MAX_BLOCK_DIM * MAX_BLOCK_DIM];
     __shared__ float block_u[MAX_BLOCK_DIM * MAX_BLOCK_DIM];
     __shared__ float block_v[MAX_BLOCK_DIM * MAX_BLOCK_DIM];
@@ -213,12 +220,15 @@ int t = 0;
 
 void step()
 {
-    dim3 grid_dims(CEIL_DIV(nx, 32), CEIL_DIV(ny, 32), 1);
-    dim3 block_dims(32 * 32);
+    const unsigned int block_dims[2] = {32, 32};
+    const unsigned int num_points = (block_dims[0] + 2 * BLOCK_HALO_RAD) * (block_dims[1] + 2 * BLOCK_HALO_RAD);
+
+    dim3 grid_dims(CEIL_DIV(nx, block_dims[0]), CEIL_DIV(ny, block_dims[1]), 1);
+    dim3 block_dims(block_dims[0] * block_dims[1]);
 
     if (t % BLOCK_HALO_RAD == 0)
     {
-        kernel<<<grid_dims, block_dims>>>(h, u, v, dh1, du1, dv1, nx, ny, t, dx, dy, dt, g, H);
+        kernel<<<grid_dims, block_dims, num_points * sizeof(float)>>>(h, u, v, dh1, du1, dv1, nx, ny, t, dx, dy, dt, g, H);
     }
 
     t++;
