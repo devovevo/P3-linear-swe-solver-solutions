@@ -96,11 +96,6 @@ __device__ inline void swap(float *p1, float *p2, int n)
 
 __global__ void kernel(float *h, float *u, float *v, float *dh1, float *du1, float *dv1, int nx, int ny, int t, float dx, float dy, float dt, float g, float H)
 {
-    // We get our block (x, y) coordinate by using the corresponding x and
-    // y coordinate of the thread block
-    int block_x = blockIdx.x;
-    int block_y = blockIdx.y;
-
     // To find how many grid points this block is responsible for in each
     // direction, we divide total num of points by the number of blocks
     // in each direction
@@ -138,8 +133,8 @@ __global__ void kernel(float *h, float *u, float *v, float *dh1, float *du1, flo
         int thread_x = i / halo_block_dims[0];
         int thread_y = i % halo_block_dims[0];
 
-        int grid_x = mod(block_x * block_dims[0] + thread_x - BLOCK_HALO_RAD, nx);
-        int grid_y = mod(block_y * block_dims[1] + thread_y - BLOCK_HALO_RAD, ny);
+        int grid_x = mod(blockIdx.x * block_dims[0] + thread_x - BLOCK_HALO_RAD, nx);
+        int grid_y = mod(blockIdx.y * block_dims[1] + thread_y - BLOCK_HALO_RAD, ny);
 
         int local_idx = i / blockDim.x;
 
