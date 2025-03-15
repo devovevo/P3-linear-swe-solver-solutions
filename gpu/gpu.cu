@@ -140,12 +140,12 @@ __global__ void kernel(float *const h, float *const u, float *const v, float *co
         __syncthreads();
 
         // We set the coefficients for our multistep method
-        // float a1 = 1.0, a2 = 0.0;
-        // if (t > 0)
-        // {
-        //     a1 = 1.5;
-        //     a2 = -0.5;
-        // }
+        float a1 = 1.0, a2 = 0.0;
+        if (t > 0)
+        {
+            a1 = 1.5;
+            a2 = -0.5;
+        }
 
         for (int i = threadIdx.x; i < (nx - 1) * (ny - 1); i += blockDim.x)
         {
@@ -154,9 +154,9 @@ __global__ void kernel(float *const h, float *const u, float *const v, float *co
 
             int local_idx = i / blockDim.x;
 
-            // block_h(thread_x, thread_y) += (a1 * thread_dh[local_idx] + a2 * thread_dh1[local_idx]) * dt;
-            // block_u(thread_x + 1, thread_y) += (a1 * thread_du[local_idx] + a2 * thread_du1[local_idx]) * dt;
-            // block_v(thread_x, thread_y + 1) += (a1 * thread_dv[local_idx] + a2 * thread_dv1[local_idx]) * dt;
+            block_h(thread_x, thread_y) += (a1 * thread_dh[local_idx] + a2 * thread_dh1[local_idx]) * dt;
+            block_u(thread_x + 1, thread_y) += (a1 * thread_du[local_idx] + a2 * thread_du1[local_idx]) * dt;
+            block_v(thread_x, thread_y + 1) += (a1 * thread_dv[local_idx] + a2 * thread_dv1[local_idx]) * dt;
         }
 
         __syncthreads();
@@ -179,7 +179,7 @@ __global__ void kernel(float *const h, float *const u, float *const v, float *co
 
         const int local_idx = i / blockDim.x;
 
-        if (grid_x < 0 || grid_y < 0 || grid_x >= nx || grid_y >= ny)
+        if (thread_x < BLOCK_HALO_RAD || thread_y < BLOCK_HALO_RAD || thread_x >= block_dims[0] + BLOCK_HALO_RAD || thread_y >= block_dims[1] + BLOCK_HALO_RAD)
         {
             continue;
         }
