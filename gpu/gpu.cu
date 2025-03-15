@@ -139,8 +139,8 @@ __global__ void kernel(float *h, float *u, float *v, float *dh1, float *du1, flo
 
     // We take just our X thread ID and turn it into our x and y such that
     // adjacent threads (in x coord) have adjacent y coordinates
-    int thread_x = threadIdx.x / blockDim.x;
-    int thread_y = threadIdx.x % blockDim.x;
+    int thread_x = threadIdx.x / halo_block_dims[0];
+    int thread_y = threadIdx.x % halo_block_dims[0];
 
     printf("Thread %d of block (%d, %d) reporting for duty! The block dims are (%d, %d) and the thread x and y are (%d, %d)\n", threadIdx.x, blockIdx.x, blockIdx.y, block_dims[0], block_dims[1], thread_x, thread_y);
 
