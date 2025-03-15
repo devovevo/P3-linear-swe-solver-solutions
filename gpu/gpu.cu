@@ -57,39 +57,6 @@ void init(float *h0, float *u0, float *v0, float length_, float width_, int nx_,
     dt = dt_;
 }
 
-__device__ inline void multistep(float *h, float *u, float *v, const float *thread_dh, const float *thread_du, const float *thread_dv, const float *thread_dh1, const float *thread_du1, const float *thread_dv1, int nx, int ny, int t, float dt)
-{
-    // We set the coefficients for our multistep method
-    float a1, a2;
-    switch (t)
-    {
-    case 0:
-        a1 = 1.0;
-        a2 = 0.0;
-        break;
-    default:
-        a1 = 3.0 / 2.0;
-        a2 = -1.0 / 2.0;
-        break;
-    }
-
-    for (int i = threadIdx.x; i < (nx - 1) * (ny - 1); i += blockDim.x)
-    {
-        int thread_x = i / nx;
-        int thread_y = i % nx;
-
-        int local_idx = i / blockDim.x;
-
-        h(thread_x, thread_y) += (a1 * thread_dh[local_idx] + a2 * thread_dh1[local_idx]) * dt;
-        u(thread_x + 1, thread_y) += (a1 * thread_du[local_idx] + a2 * thread_du1[local_idx]) * dt;
-
-        // printf("Attempting to acces (%d, %d) from v with dimensions (%d, %d).\n", thread_x, thread_y + 1, nx, ny);
-
-        // v(thread_x, thread_y) += 1.0;
-        // v(thread_x, thread_y + 1) += (a1 * thread_dv[local_idx] + a2 * thread_dv1[local_idx]) * dt;
-    }
-}
-
 __device__ inline void swap(float *p1, float *p2, int n)
 {
     for (int i = 0; i < n; i++)
@@ -202,29 +169,29 @@ __global__ void kernel(float *h, float *u, float *v, float *dh1, float *du1, flo
     }
 
     // Finally we write back to the grid
-    for (int i = threadIdx.x; i < halo_block_dims[0] * halo_block_dims[1]; i += blockDim.x)
-    {
-        const int thread_x = i / halo_block_dims[0];
-        const int thread_y = i % halo_block_dims[0];
+    // for (int i = threadIdx.x; i < halo_block_dims[0] * halo_block_dims[1]; i += blockDim.x)
+    // {
+    //     const int thread_x = i / halo_block_dims[0];
+    //     const int thread_y = i % halo_block_dims[0];
 
-        const int grid_x = blockIdx.x * block_dims[0] + thread_x - BLOCK_HALO_RAD;
-        const int grid_y = blockIdx.y * block_dims[1] + thread_y - BLOCK_HALO_RAD;
+    //     const int grid_x = blockIdx.x * block_dims[0] + thread_x - BLOCK_HALO_RAD;
+    //     const int grid_y = blockIdx.y * block_dims[1] + thread_y - BLOCK_HALO_RAD;
 
-        const int local_idx = i / blockDim.x;
+    //     const int local_idx = i / blockDim.x;
 
-        if (grid_x < 0 || grid_y < 0 || grid_x >= nx || grid_y >= ny)
-        {
-            continue;
-        }
+    //     if (grid_x < 0 || grid_y < 0 || grid_x >= nx || grid_y >= ny)
+    //     {
+    //         continue;
+    //     }
 
-        h(grid_x, grid_y) = block_h(thread_x, thread_y);
-        u(grid_x, grid_y) = block_u(thread_x, thread_y);
-        v(grid_x, grid_y) = block_v(thread_x, thread_y);
+    //     h(grid_x, grid_y) = block_h(thread_x, thread_y);
+    //     u(grid_x, grid_y) = block_u(thread_x, thread_y);
+    //     v(grid_x, grid_y) = block_v(thread_x, thread_y);
 
-        dh1(grid_x, grid_y) = thread_dh1[local_idx];
-        du1(grid_x, grid_y) = thread_du1[local_idx];
-        dv1(grid_x, grid_y) = thread_dv1[local_idx];
-    }
+    //     dh1(grid_x, grid_y) = thread_dh1[local_idx];
+    //     du1(grid_x, grid_y) = thread_du1[local_idx];
+    //     dv1(grid_x, grid_y) = thread_dv1[local_idx];
+    // }
 }
 
 int t = 0;
@@ -234,7 +201,7 @@ void step()
     const unsigned int block_x = 32, block_y = 32, num_pts = 3 * (block_x + 2 * BLOCK_HALO_RAD) * (block_y + 2 * BLOCK_HALO_RAD);
 
     dim3 grid_dims(CEIL_DIV(nx, block_x), CEIL_DIV(ny, block_y), 1);
-    dim3 block_dims(16 * 16);
+    dim3 block_dims(32 * 32);
 
     if (t % BLOCK_HALO_RAD == 0)
     {
