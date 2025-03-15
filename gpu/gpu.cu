@@ -194,9 +194,9 @@ __global__ void kernel(float *h, float *u, float *v, float *dh1, float *du1, flo
 
         __syncthreads();
 
-        swap(thread_dh, thread_dh1, MAX_THREAD_DIM * MAX_THREAD_DIM);
-        swap(thread_du, thread_du1, MAX_THREAD_DIM * MAX_THREAD_DIM);
-        swap(thread_dv, thread_dv1, MAX_THREAD_DIM * MAX_THREAD_DIM);
+        // swap(thread_dh, thread_dh1, MAX_THREAD_DIM * MAX_THREAD_DIM);
+        // swap(thread_du, thread_du1, MAX_THREAD_DIM * MAX_THREAD_DIM);
+        // swap(thread_dv, thread_dv1, MAX_THREAD_DIM * MAX_THREAD_DIM);
 
         t++;
     }
@@ -212,10 +212,10 @@ __global__ void kernel(float *h, float *u, float *v, float *dh1, float *du1, flo
 
         const int local_idx = i / blockDim.x;
 
-        // if (grid_x < 0 || grid_y < 0 || grid_x >= nx || grid_y >= ny)
-        // {
-        //     continue;
-        // }
+        if (grid_x < 0 || grid_y < 0 || grid_x >= nx || grid_y >= ny)
+        {
+            continue;
+        }
 
         h(grid_x, grid_y) = block_h(thread_x, thread_y);
         u(grid_x, grid_y) = block_u(thread_x, thread_y);
