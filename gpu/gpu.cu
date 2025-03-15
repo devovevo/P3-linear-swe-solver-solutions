@@ -106,7 +106,6 @@ __global__ void kernel(float *h, float *u, float *v, float *dh1, float *du1, flo
     // direction, we divide total num of points by the number of blocks
     // in each direction
     const unsigned int block_dims[2] = {nx / gridDim.x, ny / gridDim.y};
-    const unsigned int halo_block_dims[2] = {block_dims[0] + 2 * BLOCK_HALO_RAD, block_dims[1] + 2 * BLOCK_HALO_RAD};
 
     // Here, we set up our local blocks fields using the maximum amount of memory
     // that we can share. We make an external shared memory bank called s to
