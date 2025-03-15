@@ -160,7 +160,7 @@ __global__ void kernel(float *h, float *u, float *v, float *dh1, float *du1, flo
             int local_idx = i / blockDim.x;
 
             thread_dh[local_idx] = -H * (du_dx(thread_x, thread_y) + dv_dy(thread_x, thread_y));
-            // thread_du[local_idx] = -g * dh_dx(thread_x, thread_y);
+            thread_du[local_idx] = -g * dh_dx(thread_x, thread_y);
             // thread_dv[local_idx] = -g * dh_dy(thread_x, thread_y);
         }
 
