@@ -153,10 +153,11 @@ __global__ void kernel(float *h, float *u, float *v, float *dh1, float *du1, flo
 
         float test = h(grid_x, grid_y);
         block_h(thread_x, thread_y) = h(grid_x, grid_y);
+        float test2 = block_h(thread_x, thread_y);
         block_u(thread_x, thread_y) = u(grid_x, grid_y);
         block_v(thread_x, thread_y) = v(grid_x, grid_y);
 
-        printf("Thread %d of block (%d, %d) is loading in from grid (%d, %d) into block (%d, %d) and local idx %d. The corresponding block h value is %f (test is %f) and the grid h value is %f.\n", threadIdx.x, blockIdx.x, blockIdx.y, grid_x, grid_y, thread_x, thread_y, local_idx, block_h(thread_x, thread_y), test, h(grid_x, grid_y));
+        printf("Thread %d of block (%d, %d) is loading in from grid (%d, %d) into block (%d, %d) and local idx %d. The corresponding block h value is %f (test is %f, test2 is %f) and the grid h value is %f.\n", threadIdx.x, blockIdx.x, blockIdx.y, grid_x, grid_y, thread_x, thread_y, local_idx, block_h(thread_x, thread_y), test, test2, h(grid_x, grid_y));
 
         thread_dh1[local_idx] = dh1(grid_x, grid_y);
         thread_du1[local_idx] = du1(grid_x, grid_y);
