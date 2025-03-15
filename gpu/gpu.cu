@@ -53,23 +53,23 @@ void init(float *h0, float *u0, float *v0, float length_, float width_, int nx_,
     dt = dt_;
 }
 
-__device__ inline void derivs(const float *h, const float *u, const float *v, float *thread_dh, float *thread_du, float *thread_dv, int nx, int ny, int thread_x, int thread_y, float dx, float dy, float g, float H)
+__device__ inline void derivs(const float *h, const float *u, const float *v, float *thread_dh, float *thread_du, float *thread_dv, int nx, int ny, float dx, float dy, float g, float H)
 {
     int local_idx = 0;
-    for (int i = thread_x; i < nx - 1; i += blockDim.x)
+    for (int i = threadIdx.x; i < (nx - 1) * (ny - 1); i += blockDim.x)
     {
-        for (int j = thread_y; j < ny - 1; j += blockDim.y)
-        {
-            thread_dh[local_idx] = -H * (du_dx(i, j) + dv_dy(i, j));
-            thread_du[local_idx] = -g * dh_dx(i, j);
-            thread_dv[local_idx] = -g * dh_dy(i, j);
+        int thread_x = i / nx;
+        int thread_y = i % nx;
 
-            local_idx++;
-        }
+        thread_dh[local_idx] = -H * (du_dx(thread_x, thread_y) + dv_dy(thread_x, thread_y));
+        thread_du[local_idx] = -g * dh_dx(thread_x, thread_y);
+        thread_dv[local_idx] = -g * dh_dy(thread_x, thread_y);
+
+        local_idx++;
     }
 }
 
-__device__ inline void multistep(float *h, float *u, float *v, const float *thread_dh, const float *thread_du, const float *thread_dv, const float *thread_dh1, const float *thread_du1, const float *thread_dv1, int nx, int ny, int t, int thread_x, int thread_y, float dt)
+__device__ inline void multistep(float *h, float *u, float *v, const float *thread_dh, const float *thread_du, const float *thread_dv, const float *thread_dh1, const float *thread_du1, const float *thread_dv1, int nx, int ny, int t, float dt)
 {
     // We set the coefficients for our multistep method
     float a1, a2;
@@ -85,16 +85,16 @@ __device__ inline void multistep(float *h, float *u, float *v, const float *thre
     }
 
     int local_idx = 0;
-    for (int i = thread_x; i < nx - 1; i += blockDim.x)
+    for (int i = threadIdx.x; i < (nx - 1) * (ny - 1); i += blockDim.x)
     {
-        for (int j = thread_y; j < ny - 1; j += blockDim.y)
-        {
-            h(i, j) += (a1 * thread_dh[local_idx] + a2 * thread_dh1[local_idx]) * dt;
-            u(i + 1, j) += (a1 * thread_du[local_idx] + a2 * thread_du1[local_idx]) * dt;
-            v(i, j + 1) += (a1 * thread_dv[local_idx] + a2 * thread_dv1[local_idx]) * dt;
+        int thread_x = i / nx;
+        int thread_y = i % nx;
 
-            local_idx++;
-        }
+        h(thread_x, thread_y) += (a1 * thread_dh[local_idx] + a2 * thread_dh1[local_idx]) * dt;
+        u(thread_x, thread_y) += (a1 * thread_du[local_idx] + a2 * thread_du1[local_idx]) * dt;
+        v(thread_x, thread_y) += (a1 * thread_dv[local_idx] + a2 * thread_dv1[local_idx]) * dt;
+
+        local_idx++;
     }
 }
 
@@ -137,35 +137,30 @@ __global__ void kernel(float *h, float *u, float *v, float *dh1, float *du1, flo
     float thread_du1[MAX_THREAD_DIM * MAX_THREAD_DIM];
     float thread_dv1[MAX_THREAD_DIM * MAX_THREAD_DIM];
 
-    // We take just our X thread ID and turn it into our x and y such that
-    // adjacent threads (in x coord) have adjacent y coordinates
-    int thread_x = threadIdx.x / halo_block_dims[0];
-    int thread_y = threadIdx.x % halo_block_dims[0];
-
-    printf("Thread %d of block (%d, %d) reporting for duty! The block dims are (%d, %d) and the thread x and y are (%d, %d)\n", threadIdx.x, blockIdx.x, blockIdx.y, block_dims[0], block_dims[1], thread_x, thread_y);
+    printf("Thread %d of block (%d, %d) reporting for duty! The block dims are (%d, %d).\n", threadIdx.x, blockIdx.x, blockIdx.y, block_dims[0], block_dims[1], thread_x, thread_y);
 
     // We initialize our local block fields here by reading in from the
     // corresponding grid fields
     int local_idx = 0;
-    for (int i = thread_x; i < halo_block_dims[0]; i += blockDim.x)
+    for (int i = threadIdx.x; i < halo_block_dims[0] * halo_block_dims[1]; i += blockDim.x)
     {
-        for (int j = thread_y; j < halo_block_dims[1]; j += blockDim.y)
-        {
-            int grid_x = mod(block_x * block_dims[0] + i - BLOCK_HALO_RAD, nx);
-            int grid_y = mod(block_y * block_dims[1] + j - BLOCK_HALO_RAD, ny);
+        int thread_x = i / halo_block_dims[0];
+        int thread_y = i % halo_block_dims[0];
 
-            printf("Thread %d of block (%d, %d) with x, y (%d, %d) is loading in from grid (%d, %d) into block (%d, %d) and local idx %d\n", threadIdx.x, blockIdx.x, blockIdx.y, thread_x, thread_y, grid_x, grid_y, i, j, local_idx);
+        int grid_x = mod(block_x * block_dims[0] + thread_x - BLOCK_HALO_RAD, nx);
+        int grid_y = mod(block_y * block_dims[1] + thread_y - BLOCK_HALO_RAD, ny);
 
-            block_h(i, j) = h(grid_x, grid_y);
-            block_u(i, j) = u(grid_x, grid_y);
-            block_v(i, j) = v(grid_x, grid_y);
+        printf("Thread %d of block (%d, %d) with x, y (%d, %d) is loading in from grid (%d, %d) into block (%d, %d) and local idx %d\n", threadIdx.x, blockIdx.x, blockIdx.y, thread_x, thread_y, grid_x, grid_y, i, j, local_idx);
 
-            thread_dh1[local_idx] = dh1(grid_x, grid_y);
-            thread_du1[local_idx] = du1(grid_x, grid_y);
-            thread_dv1[local_idx] = dv1(grid_x, grid_y);
+        block_h(i, j) = h(grid_x, grid_y);
+        block_u(i, j) = u(grid_x, grid_y);
+        block_v(i, j) = v(grid_x, grid_y);
 
-            local_idx++;
-        }
+        thread_dh1[local_idx] = dh1(grid_x, grid_y);
+        thread_du1[local_idx] = du1(grid_x, grid_y);
+        thread_dv1[local_idx] = dv1(grid_x, grid_y);
+
+        local_idx++;
     }
 
     // We iterate for as long as our halo will allow us to do so
@@ -187,27 +182,24 @@ __global__ void kernel(float *h, float *u, float *v, float *dh1, float *du1, flo
     }
 
     // Finally we write back to the grid
-    for (int i = 0; i < block_dims[0]; i += blockDim.x)
+    int local_idx = 0;
+    for (int i = threadIdx.x; i < block_dims[0] * block_dims[1]; i += blockDim.x)
     {
-        for (int j = 0; j < block_dims[1]; j += blockDim.y)
-        {
-            int grid_x = block_x * block_dims[0] + thread_x + i;
-            int grid_y = block_y * block_dims[1] + thread_y + j;
+        int thread_x = i / block_dims[0];
+        int thread_y = i % block_dims[0];
 
-            int block_x = thread_x + i;
-            int block_y = thread_y + j;
+        int grid_x = block_x * block_dims[0] + thread_x;
+        int grid_y = block_y * block_dims[1] + thread_y;
 
-            int local_x = i / blockDim.x;
-            int local_y = i / blockDim.y;
+        h(grid_x, grid_y) = block_h(thread_x, thread_y);
+        u(grid_x, grid_y) = block_u(thread_x, thread_y);
+        v(grid_x, grid_y) = block_v(thread_x, thread_y);
 
-            h(grid_x, grid_y) = block_h(block_x, block_y);
-            u(grid_x, grid_y) = block_u(block_x, block_y);
-            v(grid_x, grid_y) = block_v(block_x, block_y);
+        dh1(grid_x, grid_y) = thread_dh1[local_idx];
+        du1(grid_x, grid_y) = thread_du1[local_idx];
+        dv1(grid_x, grid_y) = thread_dv1[local_idx];
 
-            dh1(grid_x, grid_y) = thread_dh1(local_x, local_y);
-            du1(grid_x, grid_y) = thread_du1(local_x, local_y);
-            dv1(grid_x, grid_y) = thread_dv1(local_x, local_y);
-        }
+        local_idx++;
     }
 }
 
