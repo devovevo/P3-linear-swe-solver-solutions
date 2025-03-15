@@ -148,7 +148,7 @@ __global__ void kernel(float *h, float *u, float *v, float *dh1, float *du1, flo
     int thread_x = threadIdx.x / halo_block_dims[0];
     int thread_y = threadIdx.x % halo_block_dims[0];
 
-    printf("Thread (%d, %d) of block (%d, %d) reporting for duty! The block dims are (%d, %d) and the thread x and y are (%d, %d)", threadIdx.x, threadIdx.y, blockIdx.x, blockIdx.y, block_dims[0], block_dims[1], thread_x, thread_y);
+    printf("Thread (%d, %d) of block (%d, %d) reporting for duty! The block dims are (%d, %d) and the thread x and y are (%d, %d)\n", threadIdx.x, threadIdx.y, blockIdx.x, blockIdx.y, block_dims[0], block_dims[1], thread_x, thread_y);
 
     // We initialize our local block fields here by reading in from the
     // corresponding grid fields
@@ -164,6 +164,8 @@ __global__ void kernel(float *h, float *u, float *v, float *dh1, float *du1, flo
 
             int local_x = i / blockDim.x;
             int local_y = j / blockDim.y;
+
+            printf("Thread (%d, %d) of block (%d, %d) with x, y (%d, %d) is loading in from grid (%d, %d) into block (%d, %d) and local (%d, %d)\n", threadIdx.x, threadIdx.y, blockIdx.x, blockIdx.y, thread_x, thread_y, grid_x, grid_y, block_x, block_y, local_x, local_y);
 
             block_h(block_x, block_y) = h(grid_x, grid_y);
             block_u(block_x, block_y) = u(grid_x, grid_y);
@@ -222,12 +224,12 @@ int t = 0;
 
 void step()
 {
-    dim3 threads(32, 32);
-    dim3 blocks(ceil(nx / threads.x), ceil(ny / threads.y));
+    dim3 grid_dims(1, 1, 1);
+    dim3 block_dims(32, 32, 1);
 
     if (t % BLOCK_HALO_RAD == 0)
     {
-        kernel<<<blocks, threads>>>(h, u, v, dh1, du1, dv1, nx, ny, t, dx, dy, dt, g, H);
+        kernel<<<grid_dims, block_dims>>>(h, u, v, dh1, du1, dv1, nx, ny, t, dx, dy, dt, g, H);
     }
 
     t++;
