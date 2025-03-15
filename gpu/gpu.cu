@@ -1,6 +1,5 @@
-#include <cuda_runtime.h>
-
 #include <stdio.h>
+#include <cuda_runtime.h>
 
 #include "../common/common.hpp"
 #include "../common/solver.hpp"
@@ -13,7 +12,11 @@
 #define thread_du(i, j) thread_du[(i) * MAX_THREAD_DIM + (j)]
 #define thread_dv(i, j) thread_dv[(i) * MAX_THREAD_DIM + (j)]
 
-#define MAX_BLOCK_DIM 32
+#define thread_dh1(i, j) thread_dh1[(i) * MAX_THREAD_DIM + (j)]
+#define thread_du1(i, j) thread_du1[(i) * MAX_THREAD_DIM + (j)]
+#define thread_dv1(i, j) thread_dv1[(i) * MAX_THREAD_DIM + (j)]
+
+#define MAX_BLOCK_DIM 64
 #define BLOCK_HALO_RAD 2
 
 #define MAX_THREAD_DIM 2
@@ -37,10 +40,6 @@ void init(float *h0, float *u0, float *v0, float length_, float width_, int nx_,
     cudaMemcpy(u, u0, nx * ny * sizeof(float), cudaMemcpyHostToDevice);
     cudaMemcpy(v, v0, nx * ny * sizeof(float), cudaMemcpyHostToDevice);
 
-    // cudaMalloc((void **)&dh, nx * ny * sizeof(float));
-    // cudaMalloc((void **)&du, nx * ny * sizeof(float));
-    // cudaMalloc((void **)&dv, nx * ny * sizeof(float));
-
     cudaMalloc((void **)&dh1, nx * ny * sizeof(float));
     cudaMalloc((void **)&du1, nx * ny * sizeof(float));
     cudaMalloc((void **)&dv1, nx * ny * sizeof(float));
@@ -54,7 +53,7 @@ void init(float *h0, float *u0, float *v0, float length_, float width_, int nx_,
     dt = dt_;
 }
 
-__device__ inline void derivs(const double *h, const double *u, const double *v, double *thread_dh, double *thread_du, double *thread_dv, int nx, int ny, float dx, float dy, float g, float H, int thread_x, int thread_y)
+__device__ inline void derivs(const float *h, const float *u, const float *v, float *thread_dh, float *thread_du, float *thread_dv, int nx, int ny, int thread_x, int thread_y, float dx, float dy, float g, float H)
 {
     for (int i = 0; i < nx - 1; i += blockDim.x)
     {
@@ -73,7 +72,7 @@ __device__ inline void derivs(const double *h, const double *u, const double *v,
     }
 }
 
-__device__ inline void multistep(double *h, double *u, double *v, const double *thread_dh, const double *thread_du, const double *thread_dv, const double *thread_dh1, const double *thread_du1, const double *thread_dv1, int nx, int ny, int t)
+__device__ inline void multistep(float *h, float *u, float *v, const float *thread_dh, const float *thread_du, const float *thread_dv, const float *thread_dh1, const float *thread_du1, const float *thread_dv1, int nx, int ny, int t, int thread_x, int thread_y, float dt)
 {
     // We set the coefficients for our multistep method
     float a1, a2;
@@ -105,7 +104,17 @@ __device__ inline void multistep(double *h, double *u, double *v, const double *
     }
 }
 
-__global__ void kernel(float *grid_h, float *grid_u, float *grid_v, float *grid_dh, float *grid_du, float *grid_dv, float *grid_dh1, float *grid_du1, float *grid_dv1, float *grid_dh2, float *grid_du2, float *grid_dv2, int nx, int ny, float dx, float dy, float g, float H, int t)
+__device__ inline void swap(float *p1, float *p2, int n)
+{
+    for (int i = 0; i < n; i++)
+    {
+        float tmp = p1[i];
+        p1[i] = p2[i];
+        p2[i] = tmp;
+    }
+}
+
+__global__ void kernel(float *h, float *u, float *v, float *dh1, float *du1, float *dv1, int nx, int ny, int t, float dx, float dy, float dt, float g, float H)
 {
     // We get our block (x, y) coordinate by using the corresponding x and
     // y coordinate of the thread block
@@ -115,8 +124,8 @@ __global__ void kernel(float *grid_h, float *grid_u, float *grid_v, float *grid_
     // To find how many grid points this block is responsible for in each
     // direction, we divide total num of points by the number of blocks
     // in each direction
-    const int block_dims[2] = {nx / gridDim.x, ny / gridDim.y};
-    const int halo_block_dims[2] = {block_dims[0] + 2 * BLOCK_HALO_RAD, block_dims[1] + 2 * BLOCK_HALO_RAD};
+    const unsigned int block_dims[2] = {nx / gridDim.x, ny / gridDim.y};
+    const unsigned int halo_block_dims[2] = {block_dims[0] + 2 * BLOCK_HALO_RAD, block_dims[1] + 2 * BLOCK_HALO_RAD};
 
     // Here, we set up our local blocks fields using the maximum amount of memory
     // that we can share
@@ -139,6 +148,8 @@ __global__ void kernel(float *grid_h, float *grid_u, float *grid_v, float *grid_
     int thread_x = threadIdx.x / halo_block_dims[0];
     int thread_y = threadIdx.x % halo_block_dims[0];
 
+    printf("Thread (%d, %d) of block (%d, %d) reporting for duty! The block dims are (%d, %d) and the thread x and y are (%d, %d)", threadIdx.x, threadIdx.y, blockIdx.x, blockIdx.y, block_dims[0], block_dims[1], thread_x, thread_y);
+
     // We initialize our local block fields here by reading in from the
     // corresponding grid fields
     for (int i = 0; i < halo_block_dims[0]; i += blockDim.x)
@@ -154,30 +165,30 @@ __global__ void kernel(float *grid_h, float *grid_u, float *grid_v, float *grid_
             int local_x = i / blockDim.x;
             int local_y = j / blockDim.y;
 
-            block_h(block_x, block_y) = grid_h(grid_x, grid_y);
-            block_u(block_x, block_y) = grid_u(grid_x, grid_y);
-            block_v(block_x, block_y) = grid_v(grid_x, grid_y);
+            block_h(block_x, block_y) = h(grid_x, grid_y);
+            block_u(block_x, block_y) = u(grid_x, grid_y);
+            block_v(block_x, block_y) = v(grid_x, grid_y);
 
-            thread_dh1(local_x, local_y) = grid_dh1(grid_x, grid_y);
-            thread_du1(local_x, local_y) = grid_du1(grid_x, grid_y);
-            thread_dv1(local_x, local_y) = grid_dv1(grid_x, grid_y);
+            thread_dh1(local_x, local_y) = dh1(grid_x, grid_y);
+            thread_du1(local_x, local_y) = du1(grid_x, grid_y);
+            thread_dv1(local_x, local_y) = dv1(grid_x, grid_y);
         }
     }
 
     // We iterate for as long as our halo will allow us to do so
     for (int n = 0; n < BLOCK_HALO_RAD; n++)
     {
-        derivs(block_h, block_u, block_v, thread_dh, thread_du, thread_dv, halo_block_dims[0], halo_block_dims[1], dx, dy, g, H, thread_x, thread_y);
+        derivs(block_h, block_u, block_v, thread_dh, thread_du, thread_dv, halo_block_dims[0], halo_block_dims[1], thread_x, thread_y, dx, dy, g, H);
 
         __syncthreads();
 
-        multistep(block_h, block_u, block_v, thread_dh, thread_du, thread_dv, thread_dh1, thread_du1, thread_dv1, halo_block_dims[0], halo_block_dims[1], t);
+        multistep(block_h, block_u, block_v, thread_dh, thread_du, thread_dv, thread_dh1, thread_du1, thread_dv1, halo_block_dims[0], halo_block_dims[1], t, thread_x, thread_y, dt);
 
         __syncthreads();
 
-        std::swap(thread_dh, thread_dh1);
-        std::swap(thread_du, thread_du1);
-        std::swap(thread_dv, thread_dv1);
+        swap(thread_dh, thread_dh1, MAX_THREAD_DIM * MAX_THREAD_DIM);
+        swap(thread_du, thread_du1, MAX_THREAD_DIM * MAX_THREAD_DIM);
+        swap(thread_dv, thread_dv1, MAX_THREAD_DIM * MAX_THREAD_DIM);
 
         t++;
     }
@@ -196,13 +207,13 @@ __global__ void kernel(float *grid_h, float *grid_u, float *grid_v, float *grid_
             int local_x = i / blockDim.x;
             int local_y = i / blockDim.y;
 
-            grid_h(grid_x, grid_y) = block_h(block_x, block_y);
-            grid_u(grid_x, grid_y) = block_u(block_x, block_y);
-            grid_v(grid_x, grid_y) = block_v(block_x, block_y);
+            h(grid_x, grid_y) = block_h(block_x, block_y);
+            u(grid_x, grid_y) = block_u(block_x, block_y);
+            v(grid_x, grid_y) = block_v(block_x, block_y);
 
-            grid_dh1(grid_x, grid_y) = thread_dh1(local_x, local_y);
-            grid_du1(grid_x, grid_y) = thread_du1(local_x, local_y);
-            grid_dv1(grid_x, grid_y) = thread_dv1(local_x, local_y);
+            dh1(grid_x, grid_y) = thread_dh1(local_x, local_y);
+            du1(grid_x, grid_y) = thread_du1(local_x, local_y);
+            dv1(grid_x, grid_y) = thread_dv1(local_x, local_y);
         }
     }
 }
@@ -211,35 +222,13 @@ int t = 0;
 
 void step()
 {
-    dim3 threadsPerBlock(BLOCK_SIZE_X, BLOCK_SIZE_Y);
-    dim3 numBlocks(ceil(nx / threadsPerBlock.x), ceil(ny / threadsPerBlock.y));
+    dim3 threads(32, 32);
+    dim3 blocks(ceil(nx / threads.x), ceil(ny / threads.y));
 
-    float a1, a2, a3;
-
-    if (t == 0)
+    if (t % BLOCK_HALO_RAD == 0)
     {
-        a1 = 1.0;
+        kernel<<<blocks, threads>>>(h, u, v, dh1, du1, dv1, nx, ny, t, dx, dy, dt, g, H);
     }
-    else if (t == 1)
-    {
-        a1 = 3.0 / 2.0;
-        a2 = -1.0 / 2.0;
-    }
-    else
-    {
-        a1 = 23.0 / 12.0;
-        a2 = -16.0 / 12.0;
-        a3 = 5.0 / 12.0;
-    }
-
-    compute_derivs<<<numBlocks, threadsPerBlock>>>(h, u, v, du, dv, dh, nx, ny, dx, dy, g, H);
-    update_fields<<<numBlocks, threadsPerBlock>>>(h, u, v, dh, du, dv, dh1, du1, dv1, dh2, du2, dv2, nx, ny, dx, dy, dt, a1, a2, a3);
-    // if (t % 20 == 0)
-    // {
-    //     combined_kernel<<<numBlocks, threadsPerBlock>>>(h, u, v, dh, du, dv, dh1, du1, dv1, dh2, du2, dv2, nx, ny, dx, dy, g, H, dt, 20);
-    // }
-
-    swap_buffers();
 
     t++;
 }
