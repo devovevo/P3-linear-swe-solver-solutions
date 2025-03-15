@@ -216,11 +216,11 @@ int t = 0;
 
 void step()
 {
-    const unsigned int block_dims[2] = {32, 32};
-    const unsigned int num_points = (block_dims[0] + 2 * BLOCK_HALO_RAD) * (block_dims[1] + 2 * BLOCK_HALO_RAD);
+    const unsigned int block_x = 32, block_y = 32;
+    const unsigned int pts_per_thread = MAX_THREAD_DIM * MAX_THREAD_DIM;
 
-    dim3 grid_dims(CEIL_DIV(nx, block_dims[0]), CEIL_DIV(ny, block_dims[1]), 1);
-    dim3 block_dims((block_dims[0] * block_dims[1]));
+    dim3 grid_dims(CEIL_DIV(nx, block_x CEIL_DIV(ny, block_y), 1);
+    dim3 block_dims((block_x / pts_per_thread) * (block_y / pts_per_thread));
 
     if (t % BLOCK_HALO_RAD == 0)
     {
