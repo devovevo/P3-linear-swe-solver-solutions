@@ -125,10 +125,10 @@ __global__ void kernel(float *const h, float *const u, float *const v, float *co
     // We iterate for as long as our halo will allow us to do so
     for (int n = 0; n < BLOCK_HALO_RAD; n++)
     {
-        for (int i = threadIdx.x; i < (nx - 1) * (ny - 1); i += blockDim.x)
+        for (int i = threadIdx.x; i < (halo_block_dims[0] - 1) * (halo_block_dims[1] - 1); i += blockDim.x)
         {
-            const int thread_x = i / nx;
-            const int thread_y = i % nx;
+            const int thread_x = i / halo_block_dims[0];
+            const int thread_y = i % halo_block_dims[0];
 
             const int local_idx = i / blockDim.x;
 
@@ -147,10 +147,10 @@ __global__ void kernel(float *const h, float *const u, float *const v, float *co
             a2 = -0.5;
         }
 
-        for (int i = threadIdx.x; i < (nx - 1) * (ny - 1); i += blockDim.x)
+        for (int i = threadIdx.x; i < (halo_block_dims[0] - 1) * (halo_block_dims[1] - 1); i += blockDim.x)
         {
-            int thread_x = i / nx;
-            int thread_y = i % nx;
+            const int thread_x = i / halo_block_dims[0];
+            const int thread_y = i % halo_block_dims[0];
 
             int local_idx = i / blockDim.x;
 
