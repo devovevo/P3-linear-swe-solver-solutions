@@ -223,7 +223,7 @@ void step()
 
     if (t % BLOCK_HALO_RAD == 0)
     {
-        kernel<<<grid_dims, block_dims, num_points * sizeof(float)>>>(h, u, v, dh1, du1, dv1, nx, ny, t, dx, dy, dt, g, H);
+        kernel<<<grid_dims, block_dims, num_pts * sizeof(float)>>>(h, u, v, dh1, du1, dv1, nx, ny, t, dx, dy, dt, g, H);
     }
 
     t++;
