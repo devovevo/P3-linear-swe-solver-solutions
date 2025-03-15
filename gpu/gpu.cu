@@ -22,7 +22,7 @@
 #define thread_du1(i, j) thread_du1[(i) * MAX_THREAD_DIM + (j)]
 #define thread_dv1(i, j) thread_dv1[(i) * MAX_THREAD_DIM + (j)]
 
-#define BLOCK_HALO_RAD 17
+#define BLOCK_HALO_RAD 16
 #define MAX_THREAD_DIM 2
 
 int nx, ny;
@@ -104,8 +104,8 @@ __global__ void kernel(float *const h, float *const u, float *const v, float *co
         const int thread_x = i / halo_block_dims[0];
         const int thread_y = i % halo_block_dims[0];
 
-        const int grid_x = mod(blockIdx.x * block_dims[0] + thread_x - BLOCK_HALO_RAD, nx);
-        const int grid_y = mod(blockIdx.y * block_dims[1] + thread_y - BLOCK_HALO_RAD, ny);
+        const int grid_x = mod(blockIdx.x * block_dims[0] + thread_x, nx);
+        const int grid_y = mod(blockIdx.y * block_dims[1] + thread_y, ny);
 
         const int local_idx = i / blockDim.x;
 
@@ -123,7 +123,7 @@ __global__ void kernel(float *const h, float *const u, float *const v, float *co
     __syncthreads();
 
     // We iterate for as long as our halo will allow us to do so
-    for (int n = 0; n < BLOCK_HALO_RAD; n++)
+    for (int n = 0; n < 2 * BLOCK_HALO_RAD; n++)
     {
         for (int i = threadIdx.x; i < (halo_block_dims[0] - 1) * (halo_block_dims[1] - 1); i += blockDim.x)
         {
@@ -174,8 +174,8 @@ __global__ void kernel(float *const h, float *const u, float *const v, float *co
         const int thread_x = i / halo_block_dims[0];
         const int thread_y = i % halo_block_dims[0];
 
-        const int grid_x = blockIdx.x * block_dims[0] + thread_x - BLOCK_HALO_RAD;
-        const int grid_y = blockIdx.y * block_dims[1] + thread_y - BLOCK_HALO_RAD;
+        const int grid_x = blockIdx.x * block_dims[0] + thread_x;
+        const int grid_y = blockIdx.y * block_dims[1] + thread_y;
 
         const int local_idx = i / blockDim.x;
 
@@ -203,7 +203,7 @@ void step()
     dim3 grid_dims(CEIL_DIV(nx, block_x), CEIL_DIV(ny, block_y), 1);
     dim3 block_dims(32 * 32);
 
-    if (t % BLOCK_HALO_RAD == 0)
+    if (t % (2 * BLOCK_HALO_RAD) == 0)
     {
         kernel<<<grid_dims, block_dims, num_pts * sizeof(float)>>>(h, u, v, dh1, du1, dv1, nx, ny, t, dx, dy, dt, g, H);
     }
