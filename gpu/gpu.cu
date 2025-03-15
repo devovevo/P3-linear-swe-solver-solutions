@@ -223,9 +223,9 @@ __global__ void kernel(float *h, float *u, float *v, float *dh1, float *du1, flo
         u(grid_x, grid_y) = block_u(thread_x, thread_y);
         v(grid_x, grid_y) = block_v(thread_x, thread_y);
 
-        // dh1(grid_x, grid_y) = thread_dh1[local_idx];
-        // du1(grid_x, grid_y) = thread_du1[local_idx];
-        // dv1(grid_x, grid_y) = thread_dv1[local_idx];
+        dh1(grid_x, grid_y) = thread_dh1[local_idx];
+        du1(grid_x, grid_y) = thread_du1[local_idx];
+        dv1(grid_x, grid_y) = thread_dv1[local_idx];
     }
 }
 
