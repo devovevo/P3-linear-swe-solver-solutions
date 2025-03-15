@@ -4,9 +4,9 @@
 #include "../common/common.hpp"
 #include "../common/solver.hpp"
 
-#define block_h(i, j) block_h[(i) * (halo_block_dims[1]) + (j)]
-#define block_u(i, j) block_u[(i) * (halo_block_dims[1]) + (j)]
-#define block_v(i, j) block_v[(i) * (halo_block_dims[1]) + (j)]
+#define block_h(i, j) block_h[(i) * ((block_dims[1] + 2 * BLOCK_HALO_RAD)) + (j)]
+#define block_u(i, j) block_u[(i) * ((block_dims[1] + 2 * BLOCK_HALO_RAD)) + (j)]
+#define block_v(i, j) block_v[(i) * ((block_dims[1] + 2 * BLOCK_HALO_RAD)) + (j)]
 
 #define block_dh_dx(i, j) (block_h(i + 1, j) - block_h(i, j)) / dx
 #define block_dh_dy(i, j) (block_h(i, j + 1) - h(i, j)) / dy
@@ -114,9 +114,9 @@ __global__ void kernel(float *h, float *u, float *v, float *dh1, float *du1, flo
 
     extern __shared__ float s[];
 
-    float *block_h = &s[0 * halo_block_dims[0] * halo_block_dims[1]];
-    float *block_u = &s[1 * halo_block_dims[0] * halo_block_dims[1]];
-    float *block_v = &s[2 * halo_block_dims[0] * halo_block_dims[1]];
+    float *block_h = &s[0 * (block_dims[0] + 2 * BLOCK_HALO_RAD) * (block_dims[1] + 2 * BLOCK_HALO_RAD)];
+    float *block_u = &s[1 * (block_dims[0] + 2 * BLOCK_HALO_RAD) * (block_dims[1] + 2 * BLOCK_HALO_RAD)];
+    float *block_v = &s[2 * (block_dims[0] + 2 * BLOCK_HALO_RAD) * (block_dims[1] + 2 * BLOCK_HALO_RAD)];
 
     // We make our gradient fields be on a per thread basis, as we don't need
     // to share this information, allowing us to have a larger block size
@@ -132,10 +132,10 @@ __global__ void kernel(float *h, float *u, float *v, float *dh1, float *du1, flo
 
     // We initialize our local block fields here by reading in from the
     // corresponding grid fields
-    for (int i = threadIdx.x; i < halo_block_dims[0] * halo_block_dims[1]; i += blockDim.x)
+    for (int i = threadIdx.x; i < (block_dims[0] + 2 * BLOCK_HALO_RAD) * (block_dims[1] + 2 * BLOCK_HALO_RAD); i += blockDim.x)
     {
-        int thread_x = i / halo_block_dims[0];
-        int thread_y = i % halo_block_dims[0];
+        int thread_x = i / (block_dims[0] + 2 * BLOCK_HALO_RAD);
+        int thread_y = i % (block_dims[0] + 2 * BLOCK_HALO_RAD);
 
         int grid_x = mod(blockIdx.x * block_dims[0] + thread_x - BLOCK_HALO_RAD, nx);
         int grid_y = mod(blockIdx.y * block_dims[1] + thread_y - BLOCK_HALO_RAD, ny);
@@ -212,10 +212,10 @@ __global__ void kernel(float *h, float *u, float *v, float *dh1, float *du1, flo
     }
 
     // Finally we write back to the grid
-    for (int i = threadIdx.x; i < halo_block_dims[0] * halo_block_dims[1]; i += blockDim.x)
+    for (int i = threadIdx.x; i < (block_dims[0] + 2 * BLOCK_HALO_RAD) * (block_dims[1] + 2 * BLOCK_HALO_RAD); i += blockDim.x)
     {
-        int thread_x = i / halo_block_dims[0];
-        int thread_y = i % halo_block_dims[0];
+        int thread_x = i / (block_dims[0] + 2 * BLOCK_HALO_RAD);
+        int thread_y = i % (block_dims[0] + 2 * BLOCK_HALO_RAD);
 
         // int grid_x = block_x * block_dims[0] + thread_x - BLOCK_HALO_RAD;
         // int grid_y = block_y * block_dims[1] + thread_y - BLOCK_HALO_RAD;
