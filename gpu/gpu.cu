@@ -173,18 +173,12 @@ __global__ void kernel(float *h, float *u, float *v, float *dh1, float *du1, flo
         __syncthreads();
 
         // We set the coefficients for our multistep method
-        // float a1, a2;
-        // switch (t)
-        // {
-        // case 0:
-        //     a1 = 1.0;
-        //     a2 = 0.0;
-        //     break;
-        // default:
-        //     a1 = 3.0 / 2.0;
-        //     a2 = -1.0 / 2.0;
-        //     break;
-        // }
+        float a1 = 1.0, a2 = 0.0;
+        if (t > 0)
+        {
+            a1 = 1.5;
+            a2 = -0.5;
+        }
 
         for (int i = threadIdx.x; i < (nx - 1) * (ny - 1); i += blockDim.x)
         {
