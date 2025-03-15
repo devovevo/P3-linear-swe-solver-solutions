@@ -166,25 +166,25 @@ __global__ void kernel(float *h, float *u, float *v, float *dh1, float *du1, flo
             int local_idx = i / blockDim.x;
 
             thread_dh[local_idx] = -H * (block_du_dx(thread_x, thread_y) + block_dv_dy(thread_x, thread_y));
-            // thread_du[local_idx] = -g * block_dh_dx(thread_x, thread_y);
-            // thread_dv[local_idx] = -g * dh_dy(thread_x, thread_y);
+            thread_du[local_idx] = -g * block_dh_dx(thread_x, thread_y);
+            thread_dv[local_idx] = -g * dh_dy(thread_x, thread_y);
         }
 
         __syncthreads();
 
         // We set the coefficients for our multistep method
-        float a1, a2;
-        switch (t)
-        {
-        case 0:
-            a1 = 1.0;
-            a2 = 0.0;
-            break;
-        default:
-            a1 = 3.0 / 2.0;
-            a2 = -1.0 / 2.0;
-            break;
-        }
+        // float a1, a2;
+        // switch (t)
+        // {
+        // case 0:
+        //     a1 = 1.0;
+        //     a2 = 0.0;
+        //     break;
+        // default:
+        //     a1 = 3.0 / 2.0;
+        //     a2 = -1.0 / 2.0;
+        //     break;
+        // }
 
         for (int i = threadIdx.x; i < (nx - 1) * (ny - 1); i += blockDim.x)
         {
@@ -193,8 +193,8 @@ __global__ void kernel(float *h, float *u, float *v, float *dh1, float *du1, flo
 
             int local_idx = i / blockDim.x;
 
-            h(thread_x, thread_y) += (a1 * thread_dh[local_idx] + a2 * thread_dh1[local_idx]) * dt;
-            u(thread_x + 1, thread_y) += (a1 * thread_du[local_idx] + a2 * thread_du1[local_idx]) * dt;
+            // h(thread_x, thread_y) += (a1 * thread_dh[local_idx] + a2 * thread_dh1[local_idx]) * dt;
+            // u(thread_x + 1, thread_y) += (a1 * thread_du[local_idx] + a2 * thread_du1[local_idx]) * dt;
 
             // printf("Attempting to acces (%d, %d) from v with dimensions (%d, %d).\n", thread_x, thread_y + 1, nx, ny);
 
