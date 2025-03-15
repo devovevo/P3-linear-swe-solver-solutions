@@ -189,10 +189,7 @@ __global__ void kernel(float *h, float *u, float *v, float *dh1, float *du1, flo
 
             h(thread_x, thread_y) += (a1 * thread_dh[local_idx] + a2 * thread_dh1[local_idx]) * dt;
             u(thread_x + 1, thread_y) += (a1 * thread_du[local_idx] + a2 * thread_du1[local_idx]) * dt;
-
-            // printf("Attempting to acces (%d, %d) from v with dimensions (%d, %d).\n", thread_x, thread_y + 1, nx, ny);
-
-            v(thread_x, thread_y) += 1.0;
+            // v(thread_x, thread_y) += 1.0;
             // v(thread_x, thread_y + 1) += (a1 * thread_dv[local_idx] + a2 * thread_dv1[local_idx]) * dt;
         }
 
