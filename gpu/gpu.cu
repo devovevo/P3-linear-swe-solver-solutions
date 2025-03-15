@@ -90,7 +90,7 @@ __device__ inline void multistep(float *h, float *u, float *v, const float *thre
     }
 }
 
-__device__ inline void swap(float *p1, float *p2, int n)
+__device__ inline void swap(volatile float *p1, volatile float *p2, int n)
 {
     for (int i = 0; i < n; i++)
     {
