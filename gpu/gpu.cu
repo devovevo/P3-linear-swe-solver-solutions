@@ -55,17 +55,16 @@ void init(float *h0, float *u0, float *v0, float length_, float width_, int nx_,
 
 __device__ inline void derivs(const float *h, const float *u, const float *v, float *thread_dh, float *thread_du, float *thread_dv, int nx, int ny, float dx, float dy, float g, float H)
 {
-    int local_idx = 0;
     for (int i = threadIdx.x; i < (nx - 1) * (ny - 1); i += blockDim.x)
     {
         int thread_x = i / nx;
         int thread_y = i % nx;
 
+        int local_idx = i / blockDim.x;
+
         thread_dh[local_idx] = -H * (du_dx(thread_x, thread_y) + dv_dy(thread_x, thread_y));
         thread_du[local_idx] = -g * dh_dx(thread_x, thread_y);
         thread_dv[local_idx] = -g * dh_dy(thread_x, thread_y);
-
-        local_idx++;
     }
 }
 
@@ -85,17 +84,16 @@ __device__ inline void multistep(float *h, float *u, float *v, const float *thre
         break;
     }
 
-    int local_idx = 0;
     for (int i = threadIdx.x; i < (nx - 1) * (ny - 1); i += blockDim.x)
     {
         int thread_x = i / nx;
         int thread_y = i % nx;
 
+        int local_idx = i / blockDim.x;
+
         h(thread_x, thread_y) += (a1 * thread_dh[local_idx] + a2 * thread_dh1[local_idx]) * dt;
         u(thread_x + 1, thread_y) += (a1 * thread_du[local_idx] + a2 * thread_du1[local_idx]) * dt;
         v(thread_x, thread_y + 1) += (a1 * thread_dv[local_idx] + a2 * thread_dv1[local_idx]) * dt;
-
-        local_idx++;
     }
 }
 
@@ -142,7 +140,6 @@ __global__ void kernel(float *h, float *u, float *v, float *dh1, float *du1, flo
 
     // We initialize our local block fields here by reading in from the
     // corresponding grid fields
-    int local_idx = 0;
     for (int i = threadIdx.x; i < halo_block_dims[0] * halo_block_dims[1]; i += blockDim.x)
     {
         int thread_x = i / halo_block_dims[0];
@@ -151,17 +148,17 @@ __global__ void kernel(float *h, float *u, float *v, float *dh1, float *du1, flo
         int grid_x = mod(block_x * block_dims[0] + thread_x - BLOCK_HALO_RAD, nx);
         int grid_y = mod(block_y * block_dims[1] + thread_y - BLOCK_HALO_RAD, ny);
 
+        int local_idx = i / blockDim.x;
+
         block_h(thread_x, thread_y) = h(grid_x, grid_y);
         block_u(thread_x, thread_y) = u(grid_x, grid_y);
         block_v(thread_x, thread_y) = v(grid_x, grid_y);
 
-        printf("Thread %d of block (%d, %d) is loading in from grid (%d, %d) into block (%d, %d) and local idx %d. The corresponding block h value is %f and the grid h value is %f.\n", threadIdx.x, blockIdx.x, blockIdx.y, grid_x, grid_y, thread_x, thread_y, local_idx, block_h(thread_x, thread_y), h(grid_x, grid_y));
+        // printf("Thread %d of block (%d, %d) is loading in from grid (%d, %d) into block (%d, %d) and local idx %d. The corresponding block h value is %f and the grid h value is %f.\n", threadIdx.x, blockIdx.x, blockIdx.y, grid_x, grid_y, thread_x, thread_y, local_idx, block_h(thread_x, thread_y), h(grid_x, grid_y));
 
         thread_dh1[local_idx] = dh1(grid_x, grid_y);
         thread_du1[local_idx] = du1(grid_x, grid_y);
         thread_dv1[local_idx] = dv1(grid_x, grid_y);
-
-        local_idx++;
     }
 
     __syncthreads();
@@ -185,23 +182,22 @@ __global__ void kernel(float *h, float *u, float *v, float *dh1, float *du1, flo
     }
 
     // Finally we write back to the grid
-    local_idx = -1;
     for (int i = threadIdx.x; i < halo_block_dims[0] * halo_block_dims[1]; i += blockDim.x)
     {
-        local_idx++;
-
         int thread_x = i / halo_block_dims[0];
         int thread_y = i % halo_block_dims[0];
 
         int grid_x = block_x * block_dims[0] + thread_x - BLOCK_HALO_RAD;
         int grid_y = block_y * block_dims[1] + thread_y - BLOCK_HALO_RAD;
 
+        int local_idx = i / blockDim.x;
+
         if (grid_x < 0 || grid_y < 0 || grid_x >= nx || grid_y >= ny)
         {
             continue;
         }
 
-        printf("Thread %d of block (%d, %d) is loading in from block (%d, %d) and local idx %d and writing back into grid (%d, %d). The corresponding block h value is %f and the grid h value is %f.\n", threadIdx.x, blockIdx.x, blockIdx.y, thread_x, thread_y, local_idx, grid_x, grid_y, block_h(thread_x, thread_y), h(grid_x, grid_y));
+        // printf("Thread %d of block (%d, %d) is loading in from block (%d, %d) and local idx %d and writing back into grid (%d, %d). The corresponding block h value is %f and the grid h value is %f.\n", threadIdx.x, blockIdx.x, blockIdx.y, thread_x, thread_y, local_idx, grid_x, grid_y, block_h(thread_x, thread_y), h(grid_x, grid_y));
 
         h(grid_x, grid_y) = block_h(thread_x, thread_y);
         u(grid_x, grid_y) = block_u(thread_x, thread_y);
