@@ -201,7 +201,7 @@ void step()
     const unsigned int block_x = 32, block_y = 32, num_pts = 3 * (block_x + 2 * BLOCK_HALO_RAD) * (block_y + 2 * BLOCK_HALO_RAD);
 
     dim3 grid_dims(CEIL_DIV(nx, block_x), CEIL_DIV(ny, block_y), 1);
-    dim3 block_dims(32 * 32);
+    dim3 block_dims(24 * 24);
 
     if (t % BLOCK_HALO_RAD == 0)
     {
