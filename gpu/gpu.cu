@@ -114,19 +114,19 @@ __global__ void kernel(float *h, float *u, float *v, float *dh1, float *du1, flo
 
     extern __shared__ float s[];
 
-    float *block_h = &s[0 * halo_block_dims[0] * halo_block_dims[1]];
-    float *block_u = &s[1 * halo_block_dims[0] * halo_block_dims[1]];
-    float *block_v = &s[2 * halo_block_dims[0] * halo_block_dims[1]];
+    volatile float *block_h = &s[0 * halo_block_dims[0] * halo_block_dims[1]];
+    volatile float *block_u = &s[1 * halo_block_dims[0] * halo_block_dims[1]];
+    volatile float *block_v = &s[2 * halo_block_dims[0] * halo_block_dims[1]];
 
     // We make our gradient fields be on a per thread basis, as we don't need
     // to share this information, allowing us to have a larger block size
-    float thread_dh[MAX_THREAD_DIM * MAX_THREAD_DIM];
-    float thread_du[MAX_THREAD_DIM * MAX_THREAD_DIM];
-    float thread_dv[MAX_THREAD_DIM * MAX_THREAD_DIM];
+    volatile float thread_dh[MAX_THREAD_DIM * MAX_THREAD_DIM];
+    volatile float thread_du[MAX_THREAD_DIM * MAX_THREAD_DIM];
+    volatile float thread_dv[MAX_THREAD_DIM * MAX_THREAD_DIM];
 
-    float thread_dh1[MAX_THREAD_DIM * MAX_THREAD_DIM];
-    float thread_du1[MAX_THREAD_DIM * MAX_THREAD_DIM];
-    float thread_dv1[MAX_THREAD_DIM * MAX_THREAD_DIM];
+    volatile float thread_dh1[MAX_THREAD_DIM * MAX_THREAD_DIM];
+    volatile float thread_du1[MAX_THREAD_DIM * MAX_THREAD_DIM];
+    volatile float thread_dv1[MAX_THREAD_DIM * MAX_THREAD_DIM];
 
     // printf("Thread %d of block (%d, %d) reporting for duty! The block dims are (%d, %d).\n", threadIdx.x, blockIdx.x, blockIdx.y, block_dims[0], block_dims[1]);
 
@@ -204,13 +204,13 @@ __global__ void kernel(float *h, float *u, float *v, float *dh1, float *du1, flo
     // Finally we write back to the grid
     for (int i = threadIdx.x; i < halo_block_dims[0] * halo_block_dims[1]; i += blockDim.x)
     {
-        volatile int thread_x = i / halo_block_dims[0];
-        volatile int thread_y = i % halo_block_dims[0];
+        const int thread_x = i / halo_block_dims[0];
+        const int thread_y = i % halo_block_dims[0];
 
-        volatile int grid_x = blockIdx.x * block_dims[0] + thread_x - BLOCK_HALO_RAD;
-        volatile int grid_y = blockIdx.y * block_dims[1] + thread_y - BLOCK_HALO_RAD;
+        const int grid_x = blockIdx.x * block_dims[0] + thread_x - BLOCK_HALO_RAD;
+        const int grid_y = blockIdx.y * block_dims[1] + thread_y - BLOCK_HALO_RAD;
 
-        volatile int local_idx = i / blockDim.x;
+        const int local_idx = i / blockDim.x;
 
         if (grid_x < 0 || grid_y < 0 || grid_x >= nx || grid_y >= ny)
         {
