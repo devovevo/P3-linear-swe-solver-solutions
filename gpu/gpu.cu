@@ -192,11 +192,11 @@ __global__ void kernel(float *h, float *u, float *v, float *dh1, float *du1, flo
             block_v(thread_x, thread_y + 1) += (a1 * thread_dv[local_idx] + a2 * thread_dv1[local_idx]) * dt;
         }
 
-        // __syncthreads();
+        __syncthreads();
 
-        // swap(thread_dh, thread_dh1, MAX_THREAD_DIM * MAX_THREAD_DIM);
-        // swap(thread_du, thread_du1, MAX_THREAD_DIM * MAX_THREAD_DIM);
-        // swap(thread_dv, thread_dv1, MAX_THREAD_DIM * MAX_THREAD_DIM);
+        swap(thread_dh, thread_dh1, MAX_THREAD_DIM * MAX_THREAD_DIM);
+        swap(thread_du, thread_du1, MAX_THREAD_DIM * MAX_THREAD_DIM);
+        swap(thread_dv, thread_dv1, MAX_THREAD_DIM * MAX_THREAD_DIM);
 
         t++;
     }
