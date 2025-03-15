@@ -102,17 +102,15 @@ __global__ void kernel(float *h, float *u, float *v, float *dh1, float *du1, flo
     const unsigned int block_dims[2] = {nx / gridDim.x, ny / gridDim.y};
     const unsigned int halo_block_dims[2] = {block_dims[0] + 2 * BLOCK_HALO_RAD, block_dims[1] + 2 * BLOCK_HALO_RAD};
 
-    const unsigned int num_points = halo_block_dims[0] * halo_block_dims[1];
-
     // Here, we set up our local blocks fields using the maximum amount of memory
     // that we can share. We make an external shared memory bank called s to
     // store into.
 
     extern __shared__ float s[];
 
-    float *block_h = &s[0 * num_points];
-    float *block_u = &s[1 * num_points];
-    float *block_v = &s[2 * num_points];
+    float *block_h = &s[0 * halo_block_dims[0] * halo_block_dims[1];];
+    float *block_u = &s[1 * halo_block_dims[0] * halo_block_dims[1];];
+    float *block_v = &s[2 * halo_block_dims[0] * halo_block_dims[1];];
 
     // We make our gradient fields be on a per thread basis, as we don't need
     // to share this information, allowing us to have a larger block size
