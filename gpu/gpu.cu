@@ -218,12 +218,13 @@ __global__ void kernel(float *h, float *u, float *v, float *dh1, float *du1, flo
         }
 
         const int grid_idx = grid_x * ny + grid_y;
+        const int thread_idx = thread_x * halo_block_dims[1] + thread_y;
 
         // printf("Thread %d of block (%d, %d) is loading in from block (%d, %d) and local idx %d and writing back into grid (%d, %d). The corresponding block h value is %f and the grid h value is %f.\n", threadIdx.x, blockIdx.x, blockIdx.y, thread_x, thread_y, local_idx, grid_x, grid_y, block_h(thread_x, thread_y), h(grid_x, grid_y));
 
-        h[grid_idx] = block_h(thread_x, thread_y);
-        u[grid_idx] = block_u(thread_x, thread_y);
-        v[grid_idx] = block_v(thread_x, thread_y);
+        h[grid_idx] = block_h[thread_idx];
+        u[grid_idx] = block_u[thread_idx];
+        v[grid_idx] = block_v[thread_idx];
 
         dh1[grid_idx] = thread_dh1[local_idx];
         du1[grid_idx] = thread_du1[local_idx];
