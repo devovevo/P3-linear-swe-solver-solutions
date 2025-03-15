@@ -137,7 +137,7 @@ __global__ void kernel(float *h, float *u, float *v, float *dh1, float *du1, flo
     float thread_du1[MAX_THREAD_DIM * MAX_THREAD_DIM];
     float thread_dv1[MAX_THREAD_DIM * MAX_THREAD_DIM];
 
-    printf("Thread %d of block (%d, %d) reporting for duty! The block dims are (%d, %d).\n", threadIdx.x, blockIdx.x, blockIdx.y, block_dims[0], block_dims[1], thread_x, thread_y);
+    printf("Thread %d of block (%d, %d) reporting for duty! The block dims are (%d, %d).\n", threadIdx.x, blockIdx.x, blockIdx.y, block_dims[0], block_dims[1]);
 
     // We initialize our local block fields here by reading in from the
     // corresponding grid fields
@@ -150,7 +150,7 @@ __global__ void kernel(float *h, float *u, float *v, float *dh1, float *du1, flo
         int grid_x = mod(block_x * block_dims[0] + thread_x - BLOCK_HALO_RAD, nx);
         int grid_y = mod(block_y * block_dims[1] + thread_y - BLOCK_HALO_RAD, ny);
 
-        printf("Thread %d of block (%d, %d) with x, y (%d, %d) is loading in from grid (%d, %d) into block (%d, %d) and local idx %d\n", threadIdx.x, blockIdx.x, blockIdx.y, thread_x, thread_y, grid_x, grid_y, i, j, local_idx);
+        printf("Thread %d of block (%d, %d) is loading in from grid (%d, %d) into block (%d, %d) and local idx %d\n", threadIdx.x, blockIdx.x, blockIdx.y, grid_x, grid_y, thread_x, thread_y, local_idx);
 
         block_h(i, j) = h(grid_x, grid_y);
         block_u(i, j) = u(grid_x, grid_y);
@@ -166,11 +166,11 @@ __global__ void kernel(float *h, float *u, float *v, float *dh1, float *du1, flo
     // We iterate for as long as our halo will allow us to do so
     for (int n = 0; n < BLOCK_HALO_RAD; n++)
     {
-        derivs(block_h, block_u, block_v, thread_dh, thread_du, thread_dv, halo_block_dims[0], halo_block_dims[1], thread_x, thread_y, dx, dy, g, H);
+        derivs(block_h, block_u, block_v, thread_dh, thread_du, thread_dv, halo_block_dims[0], halo_block_dims[1], dx, dy, g, H);
 
         __syncthreads();
 
-        multistep(block_h, block_u, block_v, thread_dh, thread_du, thread_dv, thread_dh1, thread_du1, thread_dv1, halo_block_dims[0], halo_block_dims[1], t, thread_x, thread_y, dt);
+        multistep(block_h, block_u, block_v, thread_dh, thread_du, thread_dv, thread_dh1, thread_du1, thread_dv1, halo_block_dims[0], halo_block_dims[1], t, dt);
 
         __syncthreads();
 
@@ -182,7 +182,7 @@ __global__ void kernel(float *h, float *u, float *v, float *dh1, float *du1, flo
     }
 
     // Finally we write back to the grid
-    int local_idx = 0;
+    local_idx = 0;
     for (int i = threadIdx.x; i < block_dims[0] * block_dims[1]; i += blockDim.x)
     {
         int thread_x = i / block_dims[0];
