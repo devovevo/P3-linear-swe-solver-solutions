@@ -121,20 +121,20 @@ __global__ void kernel(float *h, float *u, float *v, float *dh1, float *du1, flo
     // We make our gradient fields be on a per thread basis, as we don't need
     // to share this information, allowing us to have a larger block size
     float thread_derivs[MAX_THREAD_DIM * MAX_THREAD_DIM * 3];
-    float thread_derivs1[MAX_THREAD_DIM * MAX_THREAD_DIM * 3]
+    float thread_derivs1[MAX_THREAD_DIM * MAX_THREAD_DIM * 3];
 
-        // float thread_du[MAX_THREAD_DIM * MAX_THREAD_DIM];
-        // float thread_dv[MAX_THREAD_DIM * MAX_THREAD_DIM];
+    // float thread_du[MAX_THREAD_DIM * MAX_THREAD_DIM];
+    // float thread_dv[MAX_THREAD_DIM * MAX_THREAD_DIM];
 
-        // float thread_dh1[MAX_THREAD_DIM * MAX_THREAD_DIM];
-        // float thread_du1[MAX_THREAD_DIM * MAX_THREAD_DIM];
-        // float thread_dv1[MAX_THREAD_DIM * MAX_THREAD_DIM];
+    // float thread_dh1[MAX_THREAD_DIM * MAX_THREAD_DIM];
+    // float thread_du1[MAX_THREAD_DIM * MAX_THREAD_DIM];
+    // float thread_dv1[MAX_THREAD_DIM * MAX_THREAD_DIM];
 
-        // printf("Thread %d of block (%d, %d) reporting for duty! The block dims are (%d, %d).\n", threadIdx.x, blockIdx.x, blockIdx.y, block_dims[0], block_dims[1]);
+    // printf("Thread %d of block (%d, %d) reporting for duty! The block dims are (%d, %d).\n", threadIdx.x, blockIdx.x, blockIdx.y, block_dims[0], block_dims[1]);
 
-        // We initialize our local block fields here by reading in from the
-        // corresponding grid fields
-        for (int i = threadIdx.x; i < halo_block_dims[0] * halo_block_dims[1]; i += blockDim.x)
+    // We initialize our local block fields here by reading in from the
+    // corresponding grid fields
+    for (int i = threadIdx.x; i < halo_block_dims[0] * halo_block_dims[1]; i += blockDim.x)
     {
         int thread_x = i / halo_block_dims[0];
         int thread_y = i % halo_block_dims[0];
