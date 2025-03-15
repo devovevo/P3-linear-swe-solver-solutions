@@ -174,7 +174,7 @@ __global__ void kernel(float *h, float *u, float *v, float *dh1, float *du1, flo
 
         __syncthreads();
 
-        // multistep(block_h, block_u, block_v, thread_dh, thread_du, thread_dv, thread_dh1, thread_du1, thread_dv1, halo_block_dims[0], halo_block_dims[1], t, dt);
+        multistep(block_h, block_u, block_v, thread_dh, thread_du, thread_dv, thread_dh1, thread_du1, thread_dv1, halo_block_dims[0], halo_block_dims[1], t, dt);
 
         __syncthreads();
 
