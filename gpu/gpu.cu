@@ -5,8 +5,8 @@
 #include "../common/solver.hpp"
 
 #define block_h(i, j) block_h[(i) * (halo_block_dims[1]) + (j)]
-#define block_u(i, j) block_h[(i) * (halo_block_dims[1]) + (j)]
-#define block_v(i, j) block_h[(i) * (halo_block_dims[1]) + (j)]
+#define block_u(i, j) block_u[(i) * (halo_block_dims[1]) + (j)]
+#define block_v(i, j) block_v[(i) * (halo_block_dims[1]) + (j)]
 
 #define thread_dh(i, j) thread_dh[(i) * MAX_THREAD_DIM + (j)]
 #define thread_du(i, j) thread_du[(i) * MAX_THREAD_DIM + (j)]
@@ -151,13 +151,11 @@ __global__ void kernel(float *h, float *u, float *v, float *dh1, float *du1, flo
         int grid_x = mod(block_x * block_dims[0] + thread_x - BLOCK_HALO_RAD, nx);
         int grid_y = mod(block_y * block_dims[1] + thread_y - BLOCK_HALO_RAD, ny);
 
-        float test = h(grid_x, grid_y);
         block_h(thread_x, thread_y) = h(grid_x, grid_y);
-        float test2 = block_h(thread_x, thread_y);
         block_u(thread_x, thread_y) = u(grid_x, grid_y);
         block_v(thread_x, thread_y) = v(grid_x, grid_y);
 
-        printf("Thread %d of block (%d, %d) is loading in from grid (%d, %d) into block (%d, %d) and local idx %d. The corresponding block h value is %f (test is %f, test2 is %f) and the grid h value is %f.\n", threadIdx.x, blockIdx.x, blockIdx.y, grid_x, grid_y, thread_x, thread_y, local_idx, block_h(thread_x, thread_y), test, test2, h(grid_x, grid_y));
+        printf("Thread %d of block (%d, %d) is loading in from grid (%d, %d) into block (%d, %d) and local idx %d. The corresponding block h value is %f and the grid h value is %f.\n", threadIdx.x, blockIdx.x, blockIdx.y, grid_x, grid_y, thread_x, thread_y, local_idx, block_h(thread_x, thread_y), h(grid_x, grid_y));
 
         thread_dh1[local_idx] = dh1(grid_x, grid_y);
         thread_du1[local_idx] = du1(grid_x, grid_y);
@@ -196,11 +194,11 @@ __global__ void kernel(float *h, float *u, float *v, float *dh1, float *du1, flo
         int grid_x = block_x * block_dims[0] + thread_x - BLOCK_HALO_RAD;
         int grid_y = block_y * block_dims[1] + thread_y - BLOCK_HALO_RAD;
 
-        printf("Thread %d of block (%d, %d) is loading in from block (%d, %d) and local idx %d and writing back into grid (%d, %d). The corresponding block h value is %f\n", threadIdx.x, blockIdx.x, blockIdx.y, thread_x, thread_y, local_idx, grid_x, grid_y, block_h(thread_x, thread_y));
-
         h(grid_x, grid_y) = block_h(thread_x, thread_y);
         u(grid_x, grid_y) = block_u(thread_x, thread_y);
         v(grid_x, grid_y) = block_v(thread_x, thread_y);
+
+        printf("Thread %d of block (%d, %d) is loading in from block (%d, %d) and local idx %d and writing back into grid (%d, %d). The corresponding block h value is %f and the grid h valie is %f\n", threadIdx.x, blockIdx.x, blockIdx.y, thread_x, thread_y, local_idx, grid_x, grid_y, block_h(thread_x, thread_y), block_h(thread_x, thread_y), h(grid_x, grid_y));
 
         dh1(grid_x, grid_y) = thread_dh1[local_idx];
         du1(grid_x, grid_y) = thread_du1[local_idx];
