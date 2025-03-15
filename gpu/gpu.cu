@@ -196,7 +196,7 @@ __global__ void kernel(float *h, float *u, float *v, float *dh1, float *du1, flo
         int grid_x = block_x * block_dims[0] + thread_x - BLOCK_HALO_RAD;
         int grid_y = block_y * block_dims[1] + thread_y - BLOCK_HALO_RAD;
 
-        if (grid_x < 0 || grid_y < 0 || grid_x > nx || grid_y > ny)
+        if (grid_x < 0 || grid_y < 0 || grid_x >= nx || grid_y >= ny)
         {
             continue;
         }
