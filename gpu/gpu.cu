@@ -204,13 +204,13 @@ __global__ void kernel(float *h, float *u, float *v, float *dh1, float *du1, flo
     // Finally we write back to the grid
     for (int i = threadIdx.x; i < halo_block_dims[0] * halo_block_dims[1]; i += blockDim.x)
     {
-        const int thread_x = i / halo_block_dims[0];
-        const int thread_y = i % halo_block_dims[0];
+        volatile int thread_x = i / halo_block_dims[0];
+        volatile int thread_y = i % halo_block_dims[0];
 
-        const int grid_x = blockIdx.x * block_dims[0] + thread_x - BLOCK_HALO_RAD;
-        const int grid_y = blockIdx.y * block_dims[1] + thread_y - BLOCK_HALO_RAD;
+        volatile int grid_x = blockIdx.x * block_dims[0] + thread_x - BLOCK_HALO_RAD;
+        volatile int grid_y = blockIdx.y * block_dims[1] + thread_y - BLOCK_HALO_RAD;
 
-        const int local_idx = i / blockDim.x;
+        volatile int local_idx = i / blockDim.x;
 
         if (grid_x < 0 || grid_y < 0 || grid_x >= nx || grid_y >= ny)
         {
