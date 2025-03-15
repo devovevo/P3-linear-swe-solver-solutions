@@ -134,13 +134,13 @@ __global__ void kernel(float *h, float *u, float *v, float *dh1, float *du1, flo
     // corresponding grid fields
     for (int i = threadIdx.x; i < halo_block_dims[0] * halo_block_dims[1]; i += blockDim.x)
     {
-        int thread_x = i / halo_block_dims[0];
-        int thread_y = i % halo_block_dims[0];
+        const int thread_x = i / halo_block_dims[0];
+        const int thread_y = i % halo_block_dims[0];
 
-        int grid_x = mod(blockIdx.x * block_dims[0] + thread_x - BLOCK_HALO_RAD, nx);
-        int grid_y = mod(blockIdx.y * block_dims[1] + thread_y - BLOCK_HALO_RAD, ny);
+        const int grid_x = mod(blockIdx.x * block_dims[0] + thread_x - BLOCK_HALO_RAD, nx);
+        const int grid_y = mod(blockIdx.y * block_dims[1] + thread_y - BLOCK_HALO_RAD, ny);
 
-        int local_idx = i / blockDim.x;
+        const int local_idx = i / blockDim.x;
 
         block_h(thread_x, thread_y) = h(grid_x, grid_y);
         block_u(thread_x, thread_y) = u(grid_x, grid_y);
@@ -160,10 +160,10 @@ __global__ void kernel(float *h, float *u, float *v, float *dh1, float *du1, flo
     {
         for (int i = threadIdx.x; i < (nx - 1) * (ny - 1); i += blockDim.x)
         {
-            int thread_x = i / nx;
-            int thread_y = i % nx;
+            const int thread_x = i / nx;
+            const int thread_y = i % nx;
 
-            int local_idx = i / blockDim.x;
+            const int local_idx = i / blockDim.x;
 
             thread_dh[local_idx] = -H * (block_du_dx(thread_x, thread_y) + block_dv_dy(thread_x, thread_y));
             thread_du[local_idx] = -g * block_dh_dx(thread_x, thread_y);
@@ -204,13 +204,13 @@ __global__ void kernel(float *h, float *u, float *v, float *dh1, float *du1, flo
     // Finally we write back to the grid
     for (int i = threadIdx.x; i < halo_block_dims[0] * halo_block_dims[1]; i += blockDim.x)
     {
-        int thread_x = i / halo_block_dims[0];
-        int thread_y = i % halo_block_dims[0];
+        const int thread_x = i / halo_block_dims[0];
+        const int thread_y = i % halo_block_dims[0];
 
-        int grid_x = blockIdx.x * block_dims[0] + thread_x - BLOCK_HALO_RAD;
-        int grid_y = blockIdx.y * block_dims[1] + thread_y - BLOCK_HALO_RAD;
+        const int grid_x = blockIdx.x * block_dims[0] + thread_x - BLOCK_HALO_RAD;
+        const int grid_y = blockIdx.y * block_dims[1] + thread_y - BLOCK_HALO_RAD;
 
-        int local_idx = i / blockDim.x;
+        const int local_idx = i / blockDim.x;
 
         if (grid_x < 0 || grid_y < 0 || grid_x >= nx || grid_y >= ny)
         {
