@@ -117,6 +117,7 @@ __global__ void kernel(float *h, float *u, float *v, float *dh1, float *du1, flo
     // in each direction
     const unsigned int block_dims[2] = {nx / gridDim.x, ny / gridDim.y};
     const unsigned int halo_block_dims[2] = {block_dims[0] + 2 * BLOCK_HALO_RAD, block_dims[1] + 2 * BLOCK_HALO_RAD};
+
     const unsigned int num_points = halo_block_dims[0] * halo_block_dims[1];
 
     // Here, we set up our local blocks fields using the maximum amount of memory
@@ -216,10 +217,10 @@ int t = 0;
 
 void step()
 {
-    const unsigned int block_x = 32, block_y = 32, num_pts = (block_x + 2 * BLOCK_HALO_RAD) * (block_y + 2 * BLOCK_HALO_RAD);
+    const unsigned int block_x = 32, block_y = 32, num_pts = 3 * (block_x + 2 * BLOCK_HALO_RAD) * (block_y + 2 * BLOCK_HALO_RAD);
 
     dim3 grid_dims(CEIL_DIV(nx, block_x), CEIL_DIV(ny, block_y), 1);
-    dim3 block_dims(16 * 16);
+    dim3 block_dims(32 * 32);
 
     if (t % BLOCK_HALO_RAD == 0)
     {
