@@ -209,14 +209,13 @@ int t = 0;
 
 void step()
 {
-    dim3 grid_dims(1, 1, 1);
+    dim3 grid_dims(CEIL_DIV(nx, 32), CEIL_DIV(ny, 32), 1);
     dim3 block_dims(32 * 32);
 
     if (t % BLOCK_HALO_RAD == 0)
     {
         kernel<<<grid_dims, block_dims>>>(h, u, v, dh1, du1, dv1, nx, ny, t, dx, dy, dt, g, H);
     }
-    cudaDeviceSynchronize();
 
     t++;
 }
