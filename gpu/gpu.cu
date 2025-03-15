@@ -51,21 +51,6 @@ void init(float *h0, float *u0, float *v0, float length_, float width_, int nx_,
     dt = dt_;
 }
 
-__device__ inline void derivs(const float *h, const float *u, const float *v, float *thread_dh, float *thread_du, float *thread_dv, int nx, int ny, float dx, float dy, float g, float H)
-{
-    for (int i = threadIdx.x; i < (nx - 1) * (ny - 1); i += blockDim.x)
-    {
-        int thread_x = i / nx;
-        int thread_y = i % nx;
-
-        int local_idx = i / blockDim.x;
-
-        thread_dh[local_idx] = -H * (du_dx(thread_x, thread_y) + dv_dy(thread_x, thread_y));
-        thread_du[local_idx] = -g * dh_dx(thread_x, thread_y);
-        thread_dv[local_idx] = -g * dh_dy(thread_x, thread_y);
-    }
-}
-
 __device__ inline void multistep(float *h, float *u, float *v, const float *thread_dh, const float *thread_du, const float *thread_dv, const float *thread_dh1, const float *thread_du1, const float *thread_dv1, int nx, int ny, int t, float dt)
 {
     // We set the coefficients for our multistep method
@@ -174,7 +159,17 @@ __global__ void kernel(float *h, float *u, float *v, float *dh1, float *du1, flo
     // We iterate for as long as our halo will allow us to do so
     for (int n = 0; n < BLOCK_HALO_RAD; n++)
     {
-        derivs(block_h, block_u, block_v, thread_dh, thread_du, thread_dv, halo_block_dims[0], halo_block_dims[1], dx, dy, g, H);
+        for (int i = threadIdx.x; i < (nx - 1) * (ny - 1); i += blockDim.x)
+        {
+            int thread_x = i / nx;
+            int thread_y = i % nx;
+
+            int local_idx = i / blockDim.x;
+
+            thread_dh[local_idx] = -H * (du_dx(thread_x, thread_y) + dv_dy(thread_x, thread_y));
+            thread_du[local_idx] = -g * dh_dx(thread_x, thread_y);
+            thread_dv[local_idx] = -g * dh_dy(thread_x, thread_y);
+        }
 
         __syncthreads();
 
