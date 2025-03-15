@@ -137,7 +137,7 @@ __global__ void kernel(float *h, float *u, float *v, float *dh1, float *du1, flo
     float thread_du1[MAX_THREAD_DIM * MAX_THREAD_DIM];
     float thread_dv1[MAX_THREAD_DIM * MAX_THREAD_DIM];
 
-    printf("Thread %d of block (%d, %d) reporting for duty! The block dims are (%d, %d).\n", threadIdx.x, blockIdx.x, blockIdx.y, block_dims[0], block_dims[1]);
+    // printf("Thread %d of block (%d, %d) reporting for duty! The block dims are (%d, %d).\n", threadIdx.x, blockIdx.x, blockIdx.y, block_dims[0], block_dims[1]);
 
     // We initialize our local block fields here by reading in from the
     // corresponding grid fields
@@ -150,7 +150,7 @@ __global__ void kernel(float *h, float *u, float *v, float *dh1, float *du1, flo
         int grid_x = mod(block_x * block_dims[0] + thread_x - BLOCK_HALO_RAD, nx);
         int grid_y = mod(block_y * block_dims[1] + thread_y - BLOCK_HALO_RAD, ny);
 
-        printf("Thread %d of block (%d, %d) is loading in from grid (%d, %d) into block (%d, %d) and local idx %d\n", threadIdx.x, blockIdx.x, blockIdx.y, grid_x, grid_y, thread_x, thread_y, local_idx);
+        // printf("Thread %d of block (%d, %d) is loading in from grid (%d, %d) into block (%d, %d) and local idx %d\n", threadIdx.x, blockIdx.x, blockIdx.y, grid_x, grid_y, thread_x, thread_y, local_idx);
 
         block_h(thread_x, thread_y) = h(grid_x, grid_y);
         block_u(thread_x, thread_y) = u(grid_x, grid_y);
@@ -191,7 +191,7 @@ __global__ void kernel(float *h, float *u, float *v, float *dh1, float *du1, flo
         int grid_x = block_x * block_dims[0] + thread_x;
         int grid_y = block_y * block_dims[1] + thread_y;
 
-        printf("Thread %d of block (%d, %d) is loading in from block (%d, %d) and local idx %d and writing back into grid (%d, %d).\n", threadIdx.x, blockIdx.x, blockIdx.y, thread_x, thread_y, local_idx, grid_x, grid_y);
+        // printf("Thread %d of block (%d, %d) is loading in from block (%d, %d) and local idx %d and writing back into grid (%d, %d).\n", threadIdx.x, blockIdx.x, blockIdx.y, thread_x, thread_y, local_idx, grid_x, grid_y);
 
         h(grid_x, grid_y) = block_h(thread_x, thread_y);
         u(grid_x, grid_y) = block_u(thread_x, thread_y);
