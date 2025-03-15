@@ -4,9 +4,9 @@
 #include "../common/common.hpp"
 #include "../common/solver.hpp"
 
-#define block_h(i, j) block_h[(i) * (block_dims[1]) + (j)]
-#define block_u(i, j) block_h[(i) * (block_dims[1]) + (j)]
-#define block_v(i, j) block_h[(i) * (block_dims[1]) + (j)]
+#define block_h(i, j) block_h[(i) * (halo_block_dims[1]) + (j)]
+#define block_u(i, j) block_h[(i) * (halo_block_dims[1]) + (j)]
+#define block_v(i, j) block_h[(i) * (halo_block_dims[1]) + (j)]
 
 #define thread_dh(i, j) thread_dh[(i) * MAX_THREAD_DIM + (j)]
 #define thread_du(i, j) thread_du[(i) * MAX_THREAD_DIM + (j)]
@@ -163,6 +163,8 @@ __global__ void kernel(float *h, float *u, float *v, float *dh1, float *du1, flo
 
         local_idx++;
     }
+
+    __syncthreads();
 
     // We iterate for as long as our halo will allow us to do so
     for (int n = 0; n < BLOCK_HALO_RAD; n++)
