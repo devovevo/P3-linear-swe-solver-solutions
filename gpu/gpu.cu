@@ -194,9 +194,9 @@ __global__ void kernel(float *h, float *u, float *v, float *dh1, float *du1, flo
 
         __syncthreads();
 
-        // swap(thread_dh, thread_dh1, MAX_THREAD_DIM * MAX_THREAD_DIM);
-        // swap(thread_du, thread_du1, MAX_THREAD_DIM * MAX_THREAD_DIM);
-        // swap(thread_dv, thread_dv1, MAX_THREAD_DIM * MAX_THREAD_DIM);
+        swap(thread_dh, thread_dh1, MAX_THREAD_DIM * MAX_THREAD_DIM);
+        swap(thread_du, thread_du1, MAX_THREAD_DIM * MAX_THREAD_DIM);
+        swap(thread_dv, thread_dv1, MAX_THREAD_DIM * MAX_THREAD_DIM);
 
         t++;
     }
@@ -234,7 +234,7 @@ void step()
     const unsigned int block_x = 32, block_y = 32, num_pts = 3 * (block_x + 2 * BLOCK_HALO_RAD) * (block_y + 2 * BLOCK_HALO_RAD);
 
     dim3 grid_dims(CEIL_DIV(nx, block_x), CEIL_DIV(ny, block_y), 1);
-    dim3 block_dims(32 * 32);
+    dim3 block_dims(16 * 16);
 
     if (t % BLOCK_HALO_RAD == 0)
     {
