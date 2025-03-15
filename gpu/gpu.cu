@@ -22,7 +22,7 @@
 #define thread_du1(i, j) thread_du1[(i) * MAX_THREAD_DIM + (j)]
 #define thread_dv1(i, j) thread_dv1[(i) * MAX_THREAD_DIM + (j)]
 
-#define BLOCK_HALO_RAD 8
+#define BLOCK_HALO_RAD 15
 #define MAX_THREAD_DIM 2
 
 int nx, ny;
