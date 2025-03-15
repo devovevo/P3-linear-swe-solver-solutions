@@ -7,7 +7,7 @@ COPTFLAGS=-O3 -ffast-math -march=native -ftree-vectorize
 MPIFLAGS=-DMPI_MODE
 
 NVCC=nvcc
-NVCCFLAGS=-DCUDA_MODE
+NVCCFLAGS=-DCUDA_MODE -g -G
 
 PYTHON=python3
 
