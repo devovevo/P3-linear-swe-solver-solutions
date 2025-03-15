@@ -16,8 +16,8 @@
 #define thread_du1(i, j) thread_du1[(i) * MAX_THREAD_DIM + (j)]
 #define thread_dv1(i, j) thread_dv1[(i) * MAX_THREAD_DIM + (j)]
 
-#define MAX_BLOCK_DIM 64
-#define BLOCK_HALO_RAD 2
+#define MAX_BLOCK_DIM 48
+#define BLOCK_HALO_RAD 8
 
 #define MAX_THREAD_DIM 2
 
