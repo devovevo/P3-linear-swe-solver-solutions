@@ -90,7 +90,7 @@ __device__ inline void multistep(float *h, float *u, float *v, const float *thre
     }
 }
 
-__device__ inline void swap(volatile float *p1, volatile float *p2, int n)
+__device__ inline void swap(float *p1, float *p2, int n)
 {
     for (int i = 0; i < n; i++)
     {
@@ -120,13 +120,13 @@ __global__ void kernel(float *h, float *u, float *v, float *dh1, float *du1, flo
 
     // We make our gradient fields be on a per thread basis, as we don't need
     // to share this information, allowing us to have a larger block size
-    volatile float thread_dh[MAX_THREAD_DIM * MAX_THREAD_DIM];
-    volatile float thread_du[MAX_THREAD_DIM * MAX_THREAD_DIM];
-    volatile float thread_dv[MAX_THREAD_DIM * MAX_THREAD_DIM];
+    float thread_dh[MAX_THREAD_DIM * MAX_THREAD_DIM];
+    float thread_du[MAX_THREAD_DIM * MAX_THREAD_DIM];
+    float thread_dv[MAX_THREAD_DIM * MAX_THREAD_DIM];
 
-    volatile float thread_dh1[MAX_THREAD_DIM * MAX_THREAD_DIM];
-    volatile float thread_du1[MAX_THREAD_DIM * MAX_THREAD_DIM];
-    volatile float thread_dv1[MAX_THREAD_DIM * MAX_THREAD_DIM];
+    float thread_dh1[MAX_THREAD_DIM * MAX_THREAD_DIM];
+    float thread_du1[MAX_THREAD_DIM * MAX_THREAD_DIM];
+    float thread_dv1[MAX_THREAD_DIM * MAX_THREAD_DIM];
 
     // printf("Thread %d of block (%d, %d) reporting for duty! The block dims are (%d, %d).\n", threadIdx.x, blockIdx.x, blockIdx.y, block_dims[0], block_dims[1]);
 
@@ -212,10 +212,10 @@ __global__ void kernel(float *h, float *u, float *v, float *dh1, float *du1, flo
 
         const int local_idx = i / blockDim.x;
 
-        if (grid_x < 0 || grid_y < 0 || grid_x >= nx || grid_y >= ny)
-        {
-            continue;
-        }
+        // if (grid_x < 0 || grid_y < 0 || grid_x >= nx || grid_y >= ny)
+        // {
+        //     continue;
+        // }
 
         h(grid_x, grid_y) = block_h(thread_x, thread_y);
         u(grid_x, grid_y) = block_u(thread_x, thread_y);
