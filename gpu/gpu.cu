@@ -23,7 +23,7 @@
 #define thread_dv1(i, j) thread_dv1[(i) * MAX_THREAD_DIM + (j)]
 
 #define BLOCK_HALO_RAD 10
-#define MAX_THREAD_DIM 2
+#define MAX_THREAD_DIM 4
 
 int nx, ny;
 
@@ -201,7 +201,7 @@ void step()
     const unsigned int block_x = 32, block_y = 32, num_pts = 3 * (block_x + 2 * BLOCK_HALO_RAD) * (block_y + 2 * BLOCK_HALO_RAD);
 
     dim3 grid_dims(CEIL_DIV(nx, block_x), CEIL_DIV(ny, block_y), 1);
-    dim3 block_dims(32 * 32);
+    dim3 block_dims(16 * 16);
 
     if (t % BLOCK_HALO_RAD == 0)
     {
