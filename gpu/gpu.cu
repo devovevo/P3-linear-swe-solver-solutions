@@ -8,6 +8,12 @@
 #define block_u(i, j) block_u[(i) * (halo_block_dims[1]) + (j)]
 #define block_v(i, j) block_v[(i) * (halo_block_dims[1]) + (j)]
 
+#define block_dh_dx(i, j) (block_h(i + 1, j) - block_h(i, j)) / dx
+#define block_dh_dy(i, j) (block_h(i, j + 1) - h(i, j)) / dy
+
+#define block_du_dx(i, j) (block_u(i + 1, j) - block_u(i, j)) / dx
+#define block_dv_dy(i, j) (block_v(i, j + 1) - block_v(i, j)) / dy
+
 #define thread_dh(i, j) thread_dh[(i) * MAX_THREAD_DIM + (j)]
 #define thread_du(i, j) thread_du[(i) * MAX_THREAD_DIM + (j)]
 #define thread_dv(i, j) thread_dv[(i) * MAX_THREAD_DIM + (j)]
@@ -159,8 +165,8 @@ __global__ void kernel(float *h, float *u, float *v, float *dh1, float *du1, flo
 
             int local_idx = i / blockDim.x;
 
-            thread_dh[local_idx] = -H * (du_dx(thread_x, thread_y) + dv_dy(thread_x, thread_y));
-            thread_du[local_idx] = -g * dh_dx(thread_x, thread_y);
+            thread_dh[local_idx] = -H * (block_du_dx(thread_x, thread_y) + block_dv_dy(thread_x, thread_y));
+            thread_du[local_idx] = -g * block_dh_dx(thread_x, thread_y);
             // thread_dv[local_idx] = -g * dh_dy(thread_x, thread_y);
         }
 
