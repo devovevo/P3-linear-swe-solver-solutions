@@ -1,12 +1,13 @@
-CPP=CC
+MPICPP=mpic++
+CPP=c++
 
 CFLAGS=-lm
 COPTFLAGS=-O3 -ffast-math -march=native -ftree-vectorize
 
-MPIFLAGS=-DMPI
+MPIFLAGS=-DMPI_MODE
 
 NVCC=nvcc
-NVCCFLAGS=-DCUDA
+NVCCFLAGS=-DCUDA_MODE
 
 PYTHON=python3
 
@@ -18,7 +19,7 @@ serial: build/serial
 basic_serial: build/basic_serial
 
 build/mpi: common/main.cpp common/scenarios.cpp mpi/mpi.cpp
-	$(CPP) $^ -o $@ $(MPIFLAGS) $(CFLAGS) $(COPTFLAGS)
+	$(MPICPP) $^ -o $@ $(MPIFLAGS) $(CFLAGS) $(COPTFLAGS)
 
 build/gpu: common/main.cpp common/scenarios.cpp gpu/gpu.cu
 	$(NVCC) $^ -o $@ $(NVCCFLAGS)

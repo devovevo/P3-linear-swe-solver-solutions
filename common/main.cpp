@@ -4,11 +4,11 @@
 #include <string.h>
 #include <time.h>
 
-#ifdef CUDA
+#ifdef CUDA_MODE
 #include <cuda_runtime.h>
 #endif
 
-#ifdef MPI
+#ifdef MPI_MODE
 #include <mpi.h>
 #endif
 
@@ -17,16 +17,15 @@
 
 int main(int argc, char **argv)
 {
-
-    int length = 1.0e7, width = 1.0e7, nx = 256, ny = 258, num_iterations = 1000, save_iter = 20;
-    double depth = 100.0, g = 1.0, r = 2.0e5, max_height = 10.0, dt = 100.0;
+    int length = 1.0e7, width = 1.0e7, nx = 16, ny = 16, num_iterations = 1000, save_iter = 20;
+    float depth = 100.0, g = 1.0, r = 2.0e5, max_height = 10.0, dt = 100.0;
 
     char scenario[256] = "water_drop", output_file[256];
     bool output = false;
 
     int rank = 0, num_procs = 1;
 
-#ifdef MPI
+#ifdef MPI_MODE
     MPI_Init(&argc, &argv);
     MPI_Comm_size(MPI_COMM_WORLD, &num_procs);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
@@ -98,15 +97,15 @@ int main(int argc, char **argv)
         num_args -= 2;
     }
 
-    double *h = nullptr;
-    double *u = nullptr;
-    double *v = nullptr;
+    float *h = nullptr;
+    float *u = nullptr;
+    float *v = nullptr;
 
     if (rank == 0)
     {
-        h = (double *)calloc((nx + 1) * (ny + 1), sizeof(double));
-        u = (double *)calloc((nx + 2) * ny, sizeof(double));
-        v = (double *)calloc(nx * (ny + 2), sizeof(double));
+        h = (float *)calloc(nx * ny, sizeof(float));
+        u = (float *)calloc(nx * ny, sizeof(float));
+        v = (float *)calloc(nx * ny, sizeof(float));
 
         if (strcmp(scenario, "water_drop") == 0)
         {
@@ -133,10 +132,10 @@ int main(int argc, char **argv)
 
     clock_t init_start = clock();
 
-    init(h, u, v, length, width, nx, ny, depth, g, dt, rank, num_procs);
+    init(h, u, v, length, width, nx, ny, depth, g, dt);
 
     clock_t init_end = clock();
-    fprintf(stderr, "Initialization time for rank %d: %f\n", rank, (double)(init_end - init_start) / CLOCKS_PER_SEC);
+    fprintf(stderr, "Initialization time for rank %d: %f\n", rank, (float)(init_end - init_start) / CLOCKS_PER_SEC);
 
     FILE *fptr;
 
@@ -150,11 +149,11 @@ int main(int argc, char **argv)
         fwrite(&nx, sizeof(int), 1, fptr);
         fwrite(&ny, sizeof(int), 1, fptr);
 
-        fwrite(&depth, sizeof(double), 1, fptr);
-        fwrite(&g, sizeof(double), 1, fptr);
-        fwrite(&r, sizeof(double), 1, fptr);
-        fwrite(&max_height, sizeof(double), 1, fptr);
-        fwrite(&dt, sizeof(double), 1, fptr);
+        fwrite(&depth, sizeof(float), 1, fptr);
+        fwrite(&g, sizeof(float), 1, fptr);
+        fwrite(&r, sizeof(float), 1, fptr);
+        fwrite(&max_height, sizeof(float), 1, fptr);
+        fwrite(&dt, sizeof(float), 1, fptr);
 
         fwrite(&num_iterations, sizeof(int), 1, fptr);
         fwrite(&save_iter, sizeof(int), 1, fptr);
@@ -170,24 +169,24 @@ int main(int argc, char **argv)
 
             if (rank == 0)
             {
-                fwrite(h, sizeof(double), (nx + 1) * (ny + 1), fptr);
+                fwrite(h, sizeof(float), nx * ny, fptr);
             }
         }
 
         step();
     }
 
-#ifdef CUDA
+#ifdef CUDA_MODE
     cudaDeviceSynchronize();
 #endif
 
     clock_t end = clock();
-    fprintf(stderr, "Execution time for rank %d: %f\n", rank, (double)(end - start) / CLOCKS_PER_SEC);
+    fprintf(stderr, "Execution time for rank %d: %f\n", rank, (float)(end - start) / CLOCKS_PER_SEC);
 
     clock_t free_start = clock();
     free_memory();
     clock_t free_end = clock();
-    fprintf(stderr, "Free memory time for rank %d: %f\n", rank, (double)(free_end - free_start) / CLOCKS_PER_SEC);
+    fprintf(stderr, "Free memory time for rank %d: %f\n", rank, (float)(free_end - free_start) / CLOCKS_PER_SEC);
 
     if (rank == 0)
     {
@@ -201,7 +200,7 @@ int main(int argc, char **argv)
         }
     }
 
-#ifdef MPI
+#ifdef MPI_MODE
     MPI_Finalize();
 #endif
 

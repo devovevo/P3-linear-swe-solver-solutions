@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 
 import sys
 
-header_t = np.dtype([('Lx', 'i4'), ('Ly', 'i4'), ('nx', 'i4'), ('ny', 'i4'), ('H', 'f8'), ('g', 'f8'), ('r', 'f8'), ('h', 'f8'), ('dt', 'f8'), ('num_iter', 'i4'), ('save_iter', 'i4')])
+header_t = np.dtype([('Lx', 'i4'), ('Ly', 'i4'), ('nx', 'i4'), ('ny', 'i4'), ('H', 'f4'), ('g', 'f4'), ('r', 'f4'), ('h', 'f4'), ('dt', 'f4'), ('num_iter', 'i4'), ('save_iter', 'i4')])
 
 def main(file='serial.out', animation_file='anim.gif'):
     header = np.fromfile(file, dtype=header_t, count=1)
@@ -29,7 +29,7 @@ def main(file='serial.out', animation_file='anim.gif'):
     dx = Lx / nx
     dy = Ly / ny
 
-    h = np.fromfile(file, offset=header_t.itemsize, dtype='f8').reshape((num_frames, nx + 1, ny + 1))
+    h = np.fromfile(file, offset=header_t.itemsize, dtype='f4').reshape((num_frames, nx, ny))
     hmax = np.max(np.abs(h[0, :-1, :-1]))
 
     hx = (-Lx/2 + dx/2.0 + np.arange(nx)*dx)[:, np.newaxis]
@@ -48,7 +48,7 @@ def main(file='serial.out', animation_file='anim.gif'):
     ax3 = fig.add_subplot(223)
 
     def update_anim(i):
-        Z = h[i, :-1, :-1].T
+        Z = h[i, :, :].T
         
         ax1.cla()
         ax1.contourf(X/Lx, Y/Ly, Z, cmap=plt.cm.RdBu, levels=colorlevels*hmax)
@@ -59,7 +59,7 @@ def main(file='serial.out', animation_file='anim.gif'):
         ax2.set_title(f"h(x, y) for t = {i*save_i}")
 
         ax3.cla()
-        ax3.plot(hx/Lx, h[i, :-1, :-1][:, ny//2])
+        ax3.plot(hx/Lx, h[i, :, :][:, ny//2])
         ax3.set_title(f"h(x, 0) for t = {i*save_i}")
         ax3.set_ylim(-hmax, hmax)
 

@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 
 import sys
 
-header_t = np.dtype([('Lx', 'i4'), ('Ly', 'i4'), ('nx', 'i4'), ('ny', 'i4'), ('H', 'f8'), ('g', 'f8'), ('r', 'f8'), ('h', 'f8'), ('dt', 'f8'), ('num_iter', 'i4'), ('save_iter', 'i4')])
+header_t = np.dtype([('Lx', 'i4'), ('Ly', 'i4'), ('nx', 'i4'), ('ny', 'i4'), ('H', 'f4'), ('g', 'f4'), ('r', 'f4'), ('h', 'f4'), ('dt', 'f4'), ('num_iter', 'i4'), ('save_iter', 'i4')])
 
 def main(file1 = 'serial.out', file2 = 'gpu.out', out='correctness.gif'):
     header1 = np.fromfile(file1, dtype=header_t, count=1)
@@ -32,15 +32,15 @@ def main(file1 = 'serial.out', file2 = 'gpu.out', out='correctness.gif'):
 
     num_frames = max(num_iter // save_iter, 1)
 
-    h1 = np.fromfile(file1, offset=header_t.itemsize, dtype='f8').reshape((num_frames, nx + 1, ny + 1))
-    h2 = np.fromfile(file2, offset=header_t.itemsize, dtype='f8').reshape((num_frames, nx + 1, ny + 1))
+    h1 = np.fromfile(file1, offset=header_t.itemsize, dtype='f4').reshape((num_frames, nx, ny))
+    h2 = np.fromfile(file2, offset=header_t.itemsize, dtype='f4').reshape((num_frames, nx, ny))
 
     fig = plt.figure(figsize=(15, 15))
     ax1 = fig.add_subplot(211)
     ax2 = fig.add_subplot(212)
 
     x = np.arange(num_frames) * save_iter
-    y = np.max(np.abs(h1[:, :-1, :-1] - h2[:, :-1, :-1]), axis=(1, 2))
+    y = np.max(np.abs(h1[:, :, :] - h2[:, :, :]), axis=(1, 2))
 
     print(f"Max error: {np.max(y)}")
 
@@ -52,7 +52,7 @@ def main(file1 = 'serial.out', file2 = 'gpu.out', out='correctness.gif'):
     X, Y = np.meshgrid(hx, hy)
 
     def update_anim(i):
-        Z = np.abs(h1[i, :-1, :-1].T - h2[i, :-1, :-1].T)
+        Z = np.abs(h1[i, :, :].T - h2[i, :, :].T)
 
         ax2.cla()
         ax2.contourf(X/Lx, Y/Ly, Z, cmap=plt.cm.RdBu)

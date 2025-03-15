@@ -1,6 +1,6 @@
-#define h(i, j) h[(i) * (ny + 1) + (j)]
+#define h(i, j) h[(i) * (ny) + (j)]
 #define u(i, j) u[(i) * (ny) + (j)]
-#define v(i, j) v[(i) * (ny + 1) + (j)]
+#define v(i, j) v[(i) * (ny) + (j)]
 
 #define dh(i, j) dh[(i) * ny + (j)]
 #define du(i, j) du[(i) * ny + (j)]
@@ -19,3 +19,5 @@
 
 #define du_dx(i, j) (u(i + 1, j) - u(i, j)) / dx
 #define dv_dy(i, j) (v(i, j + 1) - v(i, j)) / dy
+
+#define mod(x, N) (x + N) % N

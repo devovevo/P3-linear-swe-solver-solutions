@@ -6,7 +6,7 @@
  * h(x, y) = max_height * exp(-((x - center_x)^2 + (y - center_y)^2) / (2 * r^2))
  *
  */
-void water_drop(int length, int width, int nx, int ny, double r, double max_height, double *h, double *u, double *v);
+void water_drop(int length, int width, int nx, int ny, float r, float max_height, float *h, float *u, float *v);
 
 /**
  * We create a dam break in the middle of the grid. The dam break is a 2D
@@ -15,7 +15,7 @@ void water_drop(int length, int width, int nx, int ny, double r, double max_heig
  *
  * h(x, y) = max_height if (x - center_x)^2 + (y - center_y)^2 < r^2 else 1.0
  */
-void dam_break(int length, int width, int nx, int ny, double r, double max_height, double *h, double *u, double *v);
+void dam_break(int length, int width, int nx, int ny, float r, float max_height, float *h, float *u, float *v);
 
 /**
  * We create a wave in the middle of the grid. The wave is a sine function
@@ -25,7 +25,7 @@ void dam_break(int length, int width, int nx, int ny, double r, double max_heigh
  *
  * h(x, y) = max_height * sin(2 * PI * x / length)
  */
-void wave(int length, int width, int nx, int ny, double max_height, double *h, double *u, double *v);
+void wave(int length, int width, int nx, int ny, float max_height, float *h, float *u, float *v);
 
 /**
  * We create a river in the middle of the grid. The river is a constant height
@@ -35,4 +35,4 @@ void wave(int length, int width, int nx, int ny, double max_height, double *h, d
  *
  * h(x, y) = max_height
  */
-void river(int length, int width, int nx, int ny, double max_height, double *h, double *u, double *v);
+void river(int length, int width, int nx, int ny, float max_height, float *h, float *u, float *v);

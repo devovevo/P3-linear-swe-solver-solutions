@@ -1,7 +1,7 @@
-void init(double *u, double *h, double *v, double length_, double width_, int nx_, int ny_, double H_, double g_, double dt_, int rank_, int num_procs_);
+void init(float *u, float *h, float *v, float length_, float width_, int nx_, int ny_, float H_, float g_, float dt_);
 
 void step();
 
 void free_memory();
 
-void transfer(double *h);
+void transfer(float *h);
