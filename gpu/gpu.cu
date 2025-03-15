@@ -192,7 +192,7 @@ __global__ void kernel(float *h, float *u, float *v, float *dh1, float *du1, flo
         int grid_x = block_x * block_dims[0] + thread_x;
         int grid_y = block_y * block_dims[1] + thread_y;
 
-        printf("Thread %d of block (%d, %d) is loading in from block (%d, %d) and local idx %d and writing back into grid (%d, %d). The corresponding block h value is %f\n", threadIdx.x, blockIdx.x, blockIdx.y, thread_x + BLOCK_HALO_RAD, thread_y + BLOCK_HALO_RAD, local_idx, grid_x, grid_y, block_h(thread_x, thread_y));
+        printf("Thread %d of block (%d, %d) is loading in from block (%d, %d) and local idx %d and writing back into grid (%d, %d). The corresponding block h value is %f\n", threadIdx.x, blockIdx.x, blockIdx.y, thread_x + BLOCK_HALO_RAD, thread_y + BLOCK_HALO_RAD, local_idx, grid_x, grid_y, block_h(thread_x + BLOCK_HALO_RAD, thread_y + BLOCK_HALO_RAD));
 
         h(grid_x, grid_y) = block_h(thread_x + BLOCK_HALO_RAD, thread_y + BLOCK_HALO_RAD);
         u(grid_x, grid_y) = block_u(thread_x + BLOCK_HALO_RAD, thread_y + BLOCK_HALO_RAD);
