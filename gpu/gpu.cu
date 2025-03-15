@@ -174,17 +174,17 @@ __global__ void kernel(float *h, float *u, float *v, float *dh1, float *du1, flo
     // We iterate for as long as our halo will allow us to do so
     for (int n = 0; n < BLOCK_HALO_RAD; n++)
     {
-        // derivs(block_h, block_u, block_v, thread_dh, thread_du, thread_dv, halo_block_dims[0], halo_block_dims[1], dx, dy, g, H);
+        derivs(block_h, block_u, block_v, thread_dh, thread_du, thread_dv, halo_block_dims[0], halo_block_dims[1], dx, dy, g, H);
 
-        // __syncthreads();
+        __syncthreads();
 
-        // multistep(block_h, block_u, block_v, thread_dh, thread_du, thread_dv, thread_dh1, thread_du1, thread_dv1, halo_block_dims[0], halo_block_dims[1], t, dt);
+        multistep(block_h, block_u, block_v, thread_dh, thread_du, thread_dv, thread_dh1, thread_du1, thread_dv1, halo_block_dims[0], halo_block_dims[1], t, dt);
 
-        // __syncthreads();
+        __syncthreads();
 
-        // swap(thread_dh, thread_dh1, MAX_THREAD_DIM * MAX_THREAD_DIM);
-        // swap(thread_du, thread_du1, MAX_THREAD_DIM * MAX_THREAD_DIM);
-        // swap(thread_dv, thread_dv1, MAX_THREAD_DIM * MAX_THREAD_DIM);
+        swap(thread_dh, thread_dh1, MAX_THREAD_DIM * MAX_THREAD_DIM);
+        swap(thread_du, thread_du1, MAX_THREAD_DIM * MAX_THREAD_DIM);
+        swap(thread_dv, thread_dv1, MAX_THREAD_DIM * MAX_THREAD_DIM);
 
         t++;
     }
