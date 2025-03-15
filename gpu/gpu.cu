@@ -185,9 +185,11 @@ __global__ void kernel(float *h, float *u, float *v, float *dh1, float *du1, flo
     }
 
     // Finally we write back to the grid
-    local_idx = 0;
+    local_idx = -1;
     for (int i = threadIdx.x; i < halo_block_dims[0] * halo_block_dims[1]; i += blockDim.x)
     {
+        local_idx++;
+
         int thread_x = i / halo_block_dims[0];
         int thread_y = i % halo_block_dims[0];
 
@@ -208,8 +210,6 @@ __global__ void kernel(float *h, float *u, float *v, float *dh1, float *du1, flo
         dh1(grid_x, grid_y) = thread_dh1[local_idx];
         du1(grid_x, grid_y) = thread_du1[local_idx];
         dv1(grid_x, grid_y) = thread_dv1[local_idx];
-
-        local_idx++;
     }
 }
 
