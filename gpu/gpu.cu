@@ -222,7 +222,7 @@ void call_kernel(int *block_dims, int halo_rad)
     dim3 grid_dims(CEIL_DIV(nx, (block_dims[0] - halo_rad)), CEIL_DIV(ny, (block_dims[1] - halo_rad)));
     dim3 thread_dims(16 * 16);
 
-    kernel<halo_rad><<<grid_dims, thread_dims, num_pts * sizeof(float)>>>(h, u, v, dh1, du1, dv1, nx, ny, t, dx, dy, dt, g, H);
+    kernel<halo_rad><<<grid_dims, thread_dims, 3 * block_dims[0] * block_dims[1] * sizeof(float)>>>(h, u, v, dh1, du1, dv1, nx, ny, t, dx, dy, dt, g, H);
 }
 
 void step()
