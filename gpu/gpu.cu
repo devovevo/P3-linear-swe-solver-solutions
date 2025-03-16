@@ -199,7 +199,7 @@ __global__ void kernel(float *const h, float *const u, float *const v, float *co
 
 int t = 0;
 
-void call_kernel(const int *block_dims, const int halo_rad)
+void call_kernel(constexpr int *block_dims, constexpr int halo_rad)
 {
     if (block_dims[0] <= halo_rad || block_dims[1] <= halo_rad)
     {
@@ -227,7 +227,8 @@ void call_kernel(const int *block_dims, const int halo_rad)
 
 void step()
 {
-    const int block_dims[2] = {32, 32}, halo_rad = 6;
+    const int block_dims[2] = {32, 32};
+    const int halo_rad = 6;
 
     if (t % (2 * halo_rad) == 0)
     {
