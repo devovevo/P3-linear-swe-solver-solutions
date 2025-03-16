@@ -191,7 +191,7 @@ __global__ void kernel(float *const h, float *const u, float *const v, float *co
 
 int t = 0;
 
-const int block_dims[2] = {64, 64};
+const int block_dims[2] = {60, 60};
 const int num_threads = 32 * 32;
 const int halo_rad = 10;
 
