@@ -199,7 +199,7 @@ __global__ void kernel(float *const h, float *const u, float *const v, float *co
 
 int t = 0;
 
-void call_kernel(int *block_dims, int halo_rad)
+void call_kernel(const int *block_dims, const int halo_rad)
 {
     if (block_dims[0] <= halo_rad || block_dims[1] <= halo_rad)
     {
