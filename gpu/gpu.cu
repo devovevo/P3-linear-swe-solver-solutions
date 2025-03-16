@@ -72,7 +72,7 @@ __global__ void kernel(float *const h, float *const u, float *const v, float *co
     // To find how many grid points this block is responsible for in each
     // direction, we divide total num of points by the number of blocks
     // in each direction
-    const unsigned int block_dims[2] = {nx / gridDim.x, ny / gridDim.y};
+    const unsigned int block_dims[2] = {min(nx / gridDim.x, nx - blockIdx.x * nx / gridDim.x), min(ny / gridDim.y, ny - blockIdx.y * ny / gridDim.y)};
     const unsigned int halo_block_dims[2] = {block_dims[0] + 2 * BLOCK_HALO_RAD, block_dims[1] + 2 * BLOCK_HALO_RAD};
 
     // Here, we set up our local blocks fields using the maximum amount of memory
