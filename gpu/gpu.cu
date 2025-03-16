@@ -203,14 +203,13 @@ void call_kernel(int *block_dims, int halo_rad)
 {
     if (block_dims[0] <= halo_rad || block_dims[1] <= halo_rad)
     {
-        printf("The provided halo radius is at least as big as one of the dimensions,
-            meaning it's all halo, which doesn't make sense.\n");
+        print("The provided halo radius is at least as big as one of the dimensions, meaning it's all halo, which doesn't make sense.\n");
         return;
     }
 
     if (block_dims[0] * block_dims[1] > 64 * 64)
     {
-        printf("The desired block size would require too much shared memory. Maximum thread block memory size can be at most that of (64, 64).\n");
+        print("The desired block size would require too much shared memory. Maximum thread block memory size can be at most that of (64, 64).\n");
         return;
     }
 
