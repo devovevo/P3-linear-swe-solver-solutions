@@ -72,7 +72,7 @@ __global__ void kernel(float *const h, float *const u, float *const v, float *co
     // To find how many grid points this block is responsible for in each
     // direction, we divide total num of points by the number of blocks
     // in each direction
-    unsigned int block_dims[2] = {nx / gridDim.x, ny / gridDim.y};
+    unsigned int block_dims[2] = {CEIL_DIV(nx, gridDim.x), CEIL_DIV(ny, gridDim.y)};
     block_dims[0] = blockIdx.x == gridDim.x - 1 ? nx - block_dims[0] * (gridDim.x - 1) : block_dims[0];
     block_dims[1] = blockIdx.y == gridDim.y - 1 ? ny - block_dims[1] * (gridDim.y - 1) : block_dims[1];
 
