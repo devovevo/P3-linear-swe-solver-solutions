@@ -192,6 +192,7 @@ __global__ void kernel(float *const h, float *const u, float *const v, float *co
 int t = 0;
 
 const int block_dims[2] = {64, 64};
+const int num_threads = 32 * 32;
 const int halo_rad = 10;
 
 void step()
@@ -211,14 +212,14 @@ void step()
             return;
         }
 
-        if (block_dims[0] * block_dims[1] / (16 * 16) > MAX_THREAD_DIM * MAX_THREAD_DIM)
+        if (block_dims[0] * block_dims[1] / num_threads > MAX_THREAD_DIM * MAX_THREAD_DIM)
         {
-            printf("The desired block size would require each thread to need to store too many local derivative calculations. The max result per thread is %d.", MAX_THREAD_DIM * MAX_THREAD_DIM);
+            printf("The desired block size would require each thread to need to store too many local derivative calculations. The max result per thread is %d.\n", MAX_THREAD_DIM * MAX_THREAD_DIM);
             return;
         }
 
         dim3 grid_dims(CEIL_DIV(nx, (block_dims[0] - 2 * halo_rad)), CEIL_DIV(ny, (block_dims[1] - 2 * halo_rad)));
-        dim3 thread_dims(32 * 32);
+        dim3 thread_dims(num_threads);
 
         kernel<halo_rad><<<grid_dims, thread_dims, 3 * block_dims[0] * block_dims[1] * sizeof(float)>>>(h, u, v, dh1, du1, dv1, nx, ny, t, dx, dy, dt, g, H);
     }
