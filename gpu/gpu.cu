@@ -174,7 +174,7 @@ __global__ void kernel(float *const h, float *const u, float *const v, float *co
 
         const int local_idx = i / blockDim.x;
 
-        if (thread_x < halo_rad || thread_y < halo_rad || thread_x >= block_dims[0] + halo_rad || thread_y >= block_dims[1] + halo_rad)
+        if (thread_x >= block_dims[0] || thread_y >= block_dims[1])
         {
             continue;
         }
