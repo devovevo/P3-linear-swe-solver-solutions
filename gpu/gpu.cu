@@ -22,7 +22,6 @@
 #define thread_du1(i, j) thread_du1[(i) * MAX_THREAD_DIM + (j)]
 #define thread_dv1(i, j) thread_dv1[(i) * MAX_THREAD_DIM + (j)]
 
-#define BLOCK_HALO_RAD 8
 #define MAX_THREAD_DIM 2
 
 int nx, ny;
@@ -67,6 +66,7 @@ __device__ inline void swap(float *p1, float *p2, int n)
     }
 }
 
+template <int halo_rad = 2>
 __global__ void kernel(float *const h, float *const u, float *const v, float *const dh1, float *const du1, float *const dv1, int nx, int ny, int t, float dx, float dy, float dt, float g, float H)
 {
     // To find how many grid points this block is responsible for in each
@@ -76,7 +76,7 @@ __global__ void kernel(float *const h, float *const u, float *const v, float *co
     block_dims[0] = blockIdx.x == gridDim.x - 1 ? nx - block_dims[0] * (gridDim.x - 1) : block_dims[0];
     block_dims[1] = blockIdx.y == gridDim.y - 1 ? ny - block_dims[1] * (gridDim.y - 1) : block_dims[1];
 
-    const unsigned int halo_block_dims[2] = {block_dims[0] + 2 * BLOCK_HALO_RAD, block_dims[1] + 2 * BLOCK_HALO_RAD};
+    const unsigned int halo_block_dims[2] = {block_dims[0] + 2 * halo_rad, block_dims[1] + 2 * halo_rad};
 
     // Here, we set up our local blocks fields using the maximum amount of memory
     // that we can share. We make an external shared memory bank called s to
@@ -98,7 +98,7 @@ __global__ void kernel(float *const h, float *const u, float *const v, float *co
     float thread_du1[MAX_THREAD_DIM * MAX_THREAD_DIM];
     float thread_dv1[MAX_THREAD_DIM * MAX_THREAD_DIM];
 
-    printf("Thread %d of block (%d, %d) reporting for duty! The block dims are (%d, %d).\n", threadIdx.x, blockIdx.x, blockIdx.y, block_dims[0], block_dims[1]);
+    // printf("Thread %d of block (%d, %d) reporting for duty! The block dims are (%d, %d).\n", threadIdx.x, blockIdx.x, blockIdx.y, block_dims[0], block_dims[1]);
 
     // We initialize our local block fields here by reading in from the
     // corresponding grid fields
@@ -126,7 +126,7 @@ __global__ void kernel(float *const h, float *const u, float *const v, float *co
     __syncthreads();
 
     // We iterate for as long as our halo will allow us to do so
-    for (int n = 0; n < 2 * BLOCK_HALO_RAD; n++)
+    for (int n = 0; n < 2 * halo_rad; n++)
     {
         for (int i = threadIdx.x; i < (halo_block_dims[0] - 1) * (halo_block_dims[1] - 1); i += blockDim.x)
         {
@@ -182,7 +182,7 @@ __global__ void kernel(float *const h, float *const u, float *const v, float *co
 
         const int local_idx = i / blockDim.x;
 
-        if (thread_x < BLOCK_HALO_RAD || thread_y < BLOCK_HALO_RAD || thread_x >= block_dims[0] + BLOCK_HALO_RAD || thread_y >= block_dims[1] + BLOCK_HALO_RAD)
+        if (thread_x < halo_rad || thread_y < halo_rad || thread_x >= block_dims[0] + halo_rad || thread_y >= block_dims[1] + halo_rad)
         {
             continue;
         }
@@ -199,16 +199,40 @@ __global__ void kernel(float *const h, float *const u, float *const v, float *co
 
 int t = 0;
 
+void call_kernel(int *block_dims, int halo_rad)
+{
+    if (block_dims[0] <= halo_rad || block_dims[1] <= halo_rad)
+    {
+        printf("The provided halo radius is at least as big as one of the dimensions,
+            meaning it's all halo, which doesn't make sense.\n");
+        return;
+    }
+
+    if (block_dims[0] * block_dims[1] > 64 * 64)
+    {
+        printf("The desired block size would require too much shared memory. Maximum thread block memory size can be at most that of (64, 64).\n");
+        return;
+    }
+
+    if (block_dims[0] * block_dims[1] / (16 * 16) > MAX_THREAD_DIM * MAX_THREAD_DIM)
+    {
+        printf("The desired block size would require each thread to need to store too many local derivative calculations. The max result per thread is %d.", MAX_THREAD_DIM * MAX_THREAD_DIM);
+        return;
+    }
+
+    dim3 grid_dims(CEIL_DIV(nx, (block_dims[0] - halo_rad)), CEIL_DIV(ny, (block_dims[1] - halo_rad)));
+    dim3 block_dims(16 * 16);
+
+    kernel<halo_rad><<<grid_dims, block_dims, num_pts * sizeof(float)>>>(h, u, v, dh1, du1, dv1, nx, ny, t, dx, dy, dt, g, H);
+}
+
 void step()
 {
-    const unsigned int block_x = 48, block_y = 48, num_pts = 3 * (block_x + 2 * BLOCK_HALO_RAD) * (block_y + 2 * BLOCK_HALO_RAD);
+    const int block_dims[2] = {32, 32}, halo_rad = 6;
 
-    dim3 grid_dims(CEIL_DIV(nx, block_x), CEIL_DIV(ny, block_y), 1);
-    dim3 block_dims(32 * 32);
-
-    if (t % (2 * BLOCK_HALO_RAD) == 0)
+    if (t % (2 * halo_rad) == 0)
     {
-        kernel<<<grid_dims, block_dims, num_pts * sizeof(float)>>>(h, u, v, dh1, du1, dv1, nx, ny, t, dx, dy, dt, g, H);
+        call_kernel(block_dims, halo_rad);
     }
 
     t++;
