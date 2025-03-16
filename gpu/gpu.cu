@@ -14,14 +14,6 @@
 #define block_du_dx(i, j) (block_u(i + 1, j) - block_u(i, j)) / dx
 #define block_dv_dy(i, j) (block_v(i, j + 1) - block_v(i, j)) / dy
 
-#define thread_dh(i, j) thread_dh[(i) * MAX_THREAD_DIM + (j)]
-#define thread_du(i, j) thread_du[(i) * MAX_THREAD_DIM + (j)]
-#define thread_dv(i, j) thread_dv[(i) * MAX_THREAD_DIM + (j)]
-
-#define thread_dh1(i, j) thread_dh1[(i) * MAX_THREAD_DIM + (j)]
-#define thread_du1(i, j) thread_du1[(i) * MAX_THREAD_DIM + (j)]
-#define thread_dv1(i, j) thread_dv1[(i) * MAX_THREAD_DIM + (j)]
-
 #define MAX_THREAD_DIM 2
 
 int nx, ny;
@@ -224,7 +216,7 @@ void step()
             return;
         }
 
-        dim3 grid_dims(CEIL_DIV(nx, (block_dims[0] - halo_rad)), CEIL_DIV(ny, (block_dims[1] - halo_rad)));
+        dim3 grid_dims(CEIL_DIV(nx, (block_dims[0] - 2 * halo_rad)), CEIL_DIV(ny, (block_dims[1] - 2 * halo_rad)));
         dim3 thread_dims(16 * 16);
 
         kernel<halo_rad><<<grid_dims, thread_dims, 3 * block_dims[0] * block_dims[1] * sizeof(float)>>>(h, u, v, dh1, du1, dv1, nx, ny, t, dx, dy, dt, g, H);
