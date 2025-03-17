@@ -9,7 +9,7 @@
 #define block_v(i, j) block_v[(i) * (halo_block_dims[1]) + (j)]
 
 #define block_dh_dx(i, j) (block_h(i + 1, j) - block_h(i, j)) / dx
-#define block_dh_dy(i, j) (block_h(i, j + 1) - h(i, j)) / dy
+#define block_dh_dy(i, j) (block_h(i, j + 1) - block_h(i, j)) / dy
 
 #define block_du_dx(i, j) (block_u(i + 1, j) - block_u(i, j)) / dx
 #define block_dv_dy(i, j) (block_v(i, j + 1) - block_v(i, j)) / dy
