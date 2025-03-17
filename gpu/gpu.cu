@@ -56,7 +56,7 @@ __device__ inline void swap(float *p1, float *p2, int n)
     }
 }
 
-template <int halo_rad = 2, int thread_dim = 4>
+template <unsigned int halo_rad = 2, unsigned int thread_dim = 4>
 __global__ void kernel(float *const h, float *const u, float *const v, float *const dh1, float *const du1, float *const dv1, int nx, int ny, int t, float dx, float dy, float dt, float g, float H)
 {
     // To find how many grid points this block is responsible for in each
@@ -80,15 +80,15 @@ __global__ void kernel(float *const h, float *const u, float *const v, float *co
 
     // We make our gradient fields be on a per thread basis, as we don't need
     // to share this information, allowing us to have a larger block size
-    float thread_dh[thread_dim * thread_dim];
-    float thread_du[thread_dim * thread_dim];
-    float thread_dv[thread_dim * thread_dim];
+    float thread_dh[thread_dim];
+    float thread_du[thread_dim];
+    float thread_dv[thread_dim];
 
-    float thread_dh1[thread_dim * thread_dim];
-    float thread_du1[thread_dim * thread_dim];
-    float thread_dv1[thread_dim * thread_dim];
+    float thread_dh1[thread_dim];
+    float thread_du1[thread_dim];
+    float thread_dv1[thread_dim];
 
-    // printf("Thread %d of block (%d, %d) reporting for duty! The block dims are (%d, %d).\n", threadIdx.x, blockIdx.x, blockIdx.y, block_dims[0], block_dims[1]);
+    printf("Thread %d of block (%d, %d) reporting for duty! The block dims are (%d, %d).\n", threadIdx.x, blockIdx.x, blockIdx.y, block_dims[0], block_dims[1]);
 
     // We initialize our local block fields here by reading in from the
     // corresponding grid fields
@@ -97,8 +97,8 @@ __global__ void kernel(float *const h, float *const u, float *const v, float *co
         const int thread_x = i / halo_block_dims[0];
         const int thread_y = i % halo_block_dims[0];
 
-        const int grid_x = mod(blockIdx.x * block_dims[0] + thread_x, nx);
-        const int grid_y = mod(blockIdx.y * block_dims[1] + thread_y, ny);
+        const int grid_x = mod(blockIdx.x * CEIL_DIV(nx, gridDim.x) + thread_x, nx);
+        const int grid_y = mod(blockIdx.y * CEIL_DIV(ny, gridDim.y) + thread_y, ny);
 
         const int local_idx = i / blockDim.x;
 
