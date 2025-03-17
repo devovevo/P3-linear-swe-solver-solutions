@@ -90,7 +90,7 @@ __global__ void kernel(float *const h, float *const u, float *const v, float *co
 
     if (threadIdx.x == 0)
     {
-        printf("Thread %d of block (%d, %d) reporting for duty! The block dims are (%d, %d) and the thread dimension is %d.\n", threadIdx.x, blockIdx.x, blockIdx.y, block_dims[0], block_dims[1], thread_dim);
+        printf("Thread %d of block (%d, %d) reporting for duty! The calculated block dims are (%d, %d) and the thread dimension is %d. Overall, our provided block dims are (%d, %d) and the grid dims are (%d, %d)\n", threadIdx.x, blockIdx.x, blockIdx.y, block_dims[0], block_dims[1], thread_dim, blockDim.x, blockDim.y, gridDim.x, gridDim.y);
     }
 
     // We initialize our local block fields here by reading in from the
