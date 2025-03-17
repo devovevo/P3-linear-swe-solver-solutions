@@ -135,6 +135,11 @@ __global__ void kernel(float *const h, float *const u, float *const v, float *co
 
             const int local_idx = i / blockDim.x;
 
+            if (blockIdx.x == 1 && blockIdx.y == 1 && threadIdx.x == 135 && local_idx == 3)
+            {
+                printf("Thread %d of block (%d, %d) loading in from (%d %d) to calculate derivatives.\n", threadIdx.x, blockIdx.x, blockIdx.y, thread_x, thread_y);
+            }
+
             // if (threadIdx.x == 0)
             // {
             //     printf("Thread %d of block (%d, %d) is loading in from block (%d, %d) to compute gradients with local idx %d.\n", threadIdx.x, blockIdx.x, blockIdx.y, thread_x, thread_y, local_idx);
