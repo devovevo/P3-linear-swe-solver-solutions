@@ -14,8 +14,6 @@
 #define block_du_dx(i, j) (block_u(i + 1, j) - block_u(i, j)) / dx
 #define block_dv_dy(i, j) (block_v(i, j + 1) - block_v(i, j)) / dy
 
-#define MAX_THREAD_DIM 2
-
 int nx, ny;
 
 // float *dh, *du, *dv;
@@ -58,7 +56,7 @@ __device__ inline void swap(float *p1, float *p2, int n)
     }
 }
 
-template <int halo_rad = 2>
+template <int halo_rad = 2, int thread_dim = 4>
 __global__ void kernel(float *const h, float *const u, float *const v, float *const dh1, float *const du1, float *const dv1, int nx, int ny, int t, float dx, float dy, float dt, float g, float H)
 {
     // To find how many grid points this block is responsible for in each
@@ -82,13 +80,13 @@ __global__ void kernel(float *const h, float *const u, float *const v, float *co
 
     // We make our gradient fields be on a per thread basis, as we don't need
     // to share this information, allowing us to have a larger block size
-    float thread_dh[MAX_THREAD_DIM * MAX_THREAD_DIM];
-    float thread_du[MAX_THREAD_DIM * MAX_THREAD_DIM];
-    float thread_dv[MAX_THREAD_DIM * MAX_THREAD_DIM];
+    float thread_dh[thread_dim * thread_dim];
+    float thread_du[thread_dim * thread_dim];
+    float thread_dv[thread_dim * thread_dim];
 
-    float thread_dh1[MAX_THREAD_DIM * MAX_THREAD_DIM];
-    float thread_du1[MAX_THREAD_DIM * MAX_THREAD_DIM];
-    float thread_dv1[MAX_THREAD_DIM * MAX_THREAD_DIM];
+    float thread_dh1[thread_dim * thread_dim];
+    float thread_du1[thread_dim * thread_dim];
+    float thread_dv1[thread_dim * thread_dim];
 
     // printf("Thread %d of block (%d, %d) reporting for duty! The block dims are (%d, %d).\n", threadIdx.x, blockIdx.x, blockIdx.y, block_dims[0], block_dims[1]);
 
@@ -156,9 +154,9 @@ __global__ void kernel(float *const h, float *const u, float *const v, float *co
 
         __syncthreads();
 
-        swap(thread_dh, thread_dh1, MAX_THREAD_DIM * MAX_THREAD_DIM);
-        swap(thread_du, thread_du1, MAX_THREAD_DIM * MAX_THREAD_DIM);
-        swap(thread_dv, thread_dv1, MAX_THREAD_DIM * MAX_THREAD_DIM);
+        swap(thread_dh, thread_dh1, thread_dim);
+        swap(thread_du, thread_du1, thread_dim);
+        swap(thread_dv, thread_dv1, thread_dim);
 
         t++;
     }
@@ -191,8 +189,8 @@ __global__ void kernel(float *const h, float *const u, float *const v, float *co
 
 int t = 0;
 
-const int block_dims[2] = {64, 64};
-const int num_threads = 32 * 32;
+const int block_dims[2] = {32, 32};
+const int num_threads = 16 * 16;
 const int halo_rad = 10;
 
 void call_kernel()
@@ -209,16 +207,18 @@ void call_kernel()
         return;
     }
 
-    if (block_dims[0] * block_dims[1] / num_threads > MAX_THREAD_DIM * MAX_THREAD_DIM)
+    const int thread_dim = block_dims[0] * block_dims[1] / num_threads;
+
+    if (block_dims[0] * block_dims[1] / num_threads > thread_dim)
     {
-        printf("The desired block size would require each thread to need to store too many local derivative calculations. The max result per thread is %d.\n", MAX_THREAD_DIM * MAX_THREAD_DIM);
+        printf("The desired block size would require each thread to need to store too many local derivative calculations. The max result per thread is %d.\n", thread_dim);
         return;
     }
 
     dim3 grid_dims(CEIL_DIV(nx, (block_dims[0] - 2 * halo_rad)), CEIL_DIV(ny, (block_dims[1] - 2 * halo_rad)));
     dim3 thread_dims(num_threads);
 
-    kernel<halo_rad><<<grid_dims, thread_dims, 3 * block_dims[0] * block_dims[1] * sizeof(float)>>>(h, u, v, dh1, du1, dv1, nx, ny, t, dx, dy, dt, g, H);
+    kernel<halo_rad, thread_dim><<<grid_dims, thread_dims, 3 * block_dims[0] * block_dims[1] * sizeof(float)>>>(h, u, v, dh1, du1, dv1, nx, ny, t, dx, dy, dt, g, H);
 }
 
 void step()
