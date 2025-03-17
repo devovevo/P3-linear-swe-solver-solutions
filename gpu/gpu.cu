@@ -131,10 +131,10 @@ __global__ void kernel(float *const h, float *const u, float *const v, float *co
 
             const int local_idx = i / blockDim.x;
 
-            if (threadIdx.x == 0)
-            {
-                printf("Thread %d of block (%d, %d) is loading in from block (%d, %d) to compute gradients with local idx %d.\n", threadIdx.x, blockIdx.x, blockIdx.y, thread_x, thread_y, local_idx);
-            }
+            // if (threadIdx.x == 0)
+            // {
+            //     printf("Thread %d of block (%d, %d) is loading in from block (%d, %d) to compute gradients with local idx %d.\n", threadIdx.x, blockIdx.x, blockIdx.y, thread_x, thread_y, local_idx);
+            // }
 
             thread_dh[local_idx] = -H * (block_du_dx(thread_x, thread_y) + block_dv_dy(thread_x, thread_y));
             thread_du[local_idx] = -g * block_dh_dx(thread_x, thread_y);
@@ -158,10 +158,10 @@ __global__ void kernel(float *const h, float *const u, float *const v, float *co
 
             int local_idx = i / blockDim.x;
 
-            if (threadIdx.x == 0)
-            {
-                printf("Thread %d of block (%d, %d) is loading in from block (%d, %d) to multistep with local idx %d.\n", threadIdx.x, blockIdx.x, blockIdx.y, thread_x, thread_y, local_idx);
-            }
+            // if (threadIdx.x == 0)
+            // {
+            //     printf("Thread %d of block (%d, %d) is loading in from block (%d, %d) to multistep with local idx %d.\n", threadIdx.x, blockIdx.x, blockIdx.y, thread_x, thread_y, local_idx);
+            // }
 
             block_h(thread_x, thread_y) += (a1 * thread_dh[local_idx] + a2 * thread_dh1[local_idx]) * dt;
             block_u(thread_x + 1, thread_y) += (a1 * thread_du[local_idx] + a2 * thread_du1[local_idx]) * dt;
