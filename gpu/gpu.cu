@@ -167,10 +167,10 @@ __global__ void kernel(float *const h, float *const u, float *const v, float *co
 
             int local_idx = i / blockDim.x;
 
-            // if (threadIdx.x == 0)
-            // {
-            //     printf("Thread %d of block (%d, %d) is loading in from block (%d, %d) to multistep with local idx %d.\n", threadIdx.x, blockIdx.x, blockIdx.y, thread_x, thread_y, local_idx);
-            // }
+            if (blockIdx.x == 1 && blockIdx.y == 1 && threadIdx.x == 135 && local_idx == 3)
+            {
+                printf("Thread %d of block (%d, %d) is loading in from block (%d, %d) to multistep with local idx %d. The value of thread_dv is %f and thread_dv1 is %f\n", threadIdx.x, blockIdx.x, blockIdx.y, thread_x, thread_y, local_idx, thread_dv[local_idx], thread_dv1[local_idx]);
+            }
 
             block_h(thread_x, thread_y) += (a1 * thread_dh[local_idx] + a2 * thread_dh1[local_idx]) * dt;
             block_u(thread_x + 1, thread_y) += (a1 * thread_du[local_idx] + a2 * thread_du1[local_idx]) * dt;
