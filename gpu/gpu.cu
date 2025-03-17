@@ -189,6 +189,8 @@ __global__ void kernel(float *const h, float *const u, float *const v, float *co
     }
 }
 
+int t = 0;
+
 const int block_dims[2] = {32, 32};
 const int num_threads = 32 * 32;
 const int halo_rad = 10;
@@ -219,11 +221,8 @@ void call_kernel()
     kernel<halo_rad><<<grid_dims, thread_dims, 3 * block_dims[0] * block_dims[1] * sizeof(float)>>>(h, u, v, dh1, du1, dv1, nx, ny, t, dx, dy, dt, g, H);
 }
 
-int t = 0;
-
 void step()
 {
-
     if (t % (2 * halo_rad) == 0)
     {
         call_kernel();
