@@ -188,14 +188,14 @@ __global__ void kernel(float *const h, float *const u, float *const v, float *co
 
         const int local_idx = i / blockDim.x;
 
-        if (threadIdx.x == 0)
-        {
-            printf("Thread %d of block (%d, %d) is loading in from block (%d, %d) and local idx %d to write to grid (%d, %d). The corresponding block h value is %f and the grid h value is %f.\n", threadIdx.x, blockIdx.x, blockIdx.y, thread_x, thread_y, local_idx, grid_x, grid_y, block_h(thread_x, thread_y), h(grid_x, grid_y));
-        }
-
         if (thread_x >= block_dims[0] || thread_y >= block_dims[1])
         {
             continue;
+        }
+
+        if (threadIdx.x == 0)
+        {
+            printf("Thread %d of block (%d, %d) is loading in from block (%d, %d) and local idx %d to write to grid (%d, %d). The block dims are (%d, %d). The corresponding block h value is %f and the grid h value is %f.\n", threadIdx.x, blockIdx.x, blockIdx.y, thread_x, thread_y, local_idx, grid_x, grid_y, block_dims[0], block_dims[1], block_h(thread_x, thread_y), h(grid_x, grid_y));
         }
 
         h(grid_x, grid_y) = block_h(thread_x, thread_y);
