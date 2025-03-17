@@ -88,7 +88,7 @@ __global__ void kernel(float *const h, float *const u, float *const v, float *co
     float thread_du1[thread_dim];
     float thread_dv1[thread_dim];
 
-    if (threaIdx.x == 0)
+    if (threadIdx.x == 0)
     {
         printf("Thread %d of block (%d, %d) reporting for duty! The block dims are (%d, %d) and the thread dimension is %d.\n", threadIdx.x, blockIdx.x, blockIdx.y, block_dims[0], block_dims[1], thread_dim);
     }
