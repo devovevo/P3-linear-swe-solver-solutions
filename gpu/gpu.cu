@@ -137,7 +137,7 @@ __global__ void kernel(float *const h, float *const u, float *const v, float *co
 
             if (blockIdx.x == 1 && blockIdx.y == 1 && threadIdx.x == 135 && local_idx == 3)
             {
-                printf("Thread %d of block (%d, %d) loading in from (%d %d) to calculate derivatives.\n", threadIdx.x, blockIdx.x, blockIdx.y, thread_x, thread_y);
+                printf("Thread %d of block (%d, %d) loading in from (%d, %d) to calculate derivatives. The value of h at (%d + 1, %d) = %f, (%d, %d + 1) = %f. The value of u at (%d, %d) = %f, (%d + 1, %d) = %f and of v at (%d, %d) = %f, (%d, %d + 1) = %f.\n", threadIdx.x, blockIdx.x, blockIdx.y, thread_x, thread_y, thread_x + 1, thread_y, block_h(thread_x + 1, thread_y), thread_x, thread_y + 1, block_h(thread_x, thread_y + 1), thread_x, thread_y, block_u(thread_x, thread_y), thread_x + 1, thread_y, block_u(thread_x + 1, thread_y), thread_x, thread_y, block_v(thread_x, thread_y), thread_x, thread_y + 1, block_v(thread_x, thread_y + 1));
             }
 
             // if (threadIdx.x == 0)
