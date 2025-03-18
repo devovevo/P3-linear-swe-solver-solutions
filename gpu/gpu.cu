@@ -176,25 +176,25 @@ __global__ void kernel(float *const h, float *const u, float *const v, float *co
             block_u(thread_x + 1, thread_y) += (a1 * thread_du[local_idx] + a2 * thread_du1[local_idx]) * dt;
             block_v(thread_x, thread_y + 1) += (a1 * thread_dv[local_idx] + a2 * thread_dv1[local_idx]) * dt;
 
-            if (thread_x == block_dims[0])
-            {
-                block_h(thread_x, thread_y) = 1;
-            }
+            // if (thread_x == block_dims[0] - 1)
+            // {
+            //     block_h(thread_x, thread_y) = 1;
+            // }
 
-            if (thread_x == 0)
-            {
-                block_h(thread_x, thread_y) = -1;
-            }
+            // if (thread_x == 0)
+            // {
+            //     block_h(thread_x, thread_y) = -1;
+            // }
 
-            if (thread_y == block_dims[1])
-            {
-                block_h(thread_x, thread_y) = 1;
-            }
+            // if (thread_y == block_dims[1] - 1)
+            // {
+            //     block_h(thread_x, thread_y) = 1;
+            // }
 
-            if (thread_y == 0)
-            {
-                block_h(thread_x, thread_y) = -1;
-            }
+            // if (thread_y == 0)
+            // {
+            //     block_h(thread_x, thread_y) = -1;
+            // }
         }
 
         __syncthreads();
@@ -202,8 +202,6 @@ __global__ void kernel(float *const h, float *const u, float *const v, float *co
         swap(thread_dh, thread_dh1, thread_dim);
         swap(thread_du, thread_du1, thread_dim);
         swap(thread_dv, thread_dv1, thread_dim);
-
-        t++;
     }
 
     // Finally we write back to the grid
