@@ -104,8 +104,8 @@ __global__ void kernel(float *const h, float *const u, float *const v, float *co
         const int thread_x = i / halo_block_dims[0];
         const int thread_y = i % halo_block_dims[0];
 
-        const int grid_x = mod(blockIdx.x * (CEIL_DIV(nx, gridDim.x)) + thread_x, nx);
-        const int grid_y = mod(blockIdx.y * (CEIL_DIV(ny, gridDim.y)) + thread_y, ny);
+        const int grid_x = mod(blockIdx.x * CEIL_DIV(nx, gridDim.x) + thread_x, nx);
+        const int grid_y = mod(blockIdx.y * CEIL_DIV(ny, gridDim.y) + thread_y, ny);
 
         const int local_idx = i / blockDim.x;
 
@@ -175,26 +175,6 @@ __global__ void kernel(float *const h, float *const u, float *const v, float *co
             block_h(thread_x, thread_y) += (a1 * thread_dh[local_idx] + a2 * thread_dh1[local_idx]) * dt;
             block_u(thread_x + 1, thread_y) += (a1 * thread_du[local_idx] + a2 * thread_du1[local_idx]) * dt;
             block_v(thread_x, thread_y + 1) += (a1 * thread_dv[local_idx] + a2 * thread_dv1[local_idx]) * dt;
-
-            // if (thread_x == block_dims[0] - 1)
-            // {
-            //     block_h(thread_x, thread_y) = 1;
-            // }
-
-            // if (thread_x == 0)
-            // {
-            //     block_h(thread_x, thread_y) = -1;
-            // }
-
-            // if (thread_y == block_dims[1] - 1)
-            // {
-            //     block_h(thread_x, thread_y) = 1;
-            // }
-
-            // if (thread_y == 0)
-            // {
-            //     block_h(thread_x, thread_y) = -1;
-            // }
         }
 
         __syncthreads();
@@ -202,6 +182,8 @@ __global__ void kernel(float *const h, float *const u, float *const v, float *co
         swap(thread_dh, thread_dh1, thread_dim);
         swap(thread_du, thread_du1, thread_dim);
         swap(thread_dv, thread_dv1, thread_dim);
+
+        t++;
     }
 
     // Finally we write back to the grid
@@ -210,8 +192,8 @@ __global__ void kernel(float *const h, float *const u, float *const v, float *co
         const int thread_x = i / halo_block_dims[0];
         const int thread_y = i % halo_block_dims[0];
 
-        const int grid_x = blockIdx.x * (CEIL_DIV(nx, gridDim.x)) + thread_x;
-        const int grid_y = blockIdx.y * (CEIL_DIV(ny, gridDim.y)) + thread_y;
+        const int grid_x = blockIdx.x * CEIL_DIV(nx, gridDim.x) + thread_x;
+        const int grid_y = blockIdx.y * CEIL_DIV(ny, gridDim.y) + thread_y;
 
         const int local_idx = i / blockDim.x;
 
@@ -240,13 +222,11 @@ __global__ void kernel(float *const h, float *const u, float *const v, float *co
     }
 }
 
-int t = 0;
-
 const int block_dims[2] = {64, 64};
 const int num_threads = 16 * 16;
 const int halo_rad = 10;
 
-void call_kernel()
+void call_kernel(int t)
 {
     if (block_dims[0] <= halo_rad || block_dims[1] <= halo_rad)
     {
@@ -268,11 +248,13 @@ void call_kernel()
     kernel<halo_rad, thread_dim><<<grid_dims, thread_dims, 3 * block_dims[0] * block_dims[1] * sizeof(float)>>>(h, u, v, dh1, du1, dv1, nx, ny, t, dx, dy, dt, g, H);
 }
 
+int t = 0;
+
 void step()
 {
     if (t % (2 * halo_rad) == 0)
     {
-        call_kernel();
+        call_kernel(t);
     }
 
     t++;
