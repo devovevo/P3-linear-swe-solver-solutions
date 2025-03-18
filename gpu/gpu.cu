@@ -192,8 +192,8 @@ __global__ void kernel(float *const h, float *const u, float *const v, float *co
         const int thread_x = i / halo_block_dims[0];
         const int thread_y = i % halo_block_dims[0];
 
-        const int grid_x = blockIdx.x * CEIL_DIV(nx, gridDim.x) + thread_x;
-        const int grid_y = blockIdx.y * CEIL_DIV(ny, gridDim.y) + thread_y;
+        const int grid_x = blockIdx.x * (CEIL_DIV(nx, gridDim.x)) + thread_x;
+        const int grid_y = blockIdx.y * (CEIL_DIV(ny, gridDim.y)) + thread_y;
 
         const int local_idx = i / blockDim.x;
 
