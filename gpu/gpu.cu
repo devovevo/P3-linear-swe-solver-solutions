@@ -204,7 +204,7 @@ __global__ void kernel(float *const h, float *const u, float *const v, float *co
 
         if (grid_x >= nx || grid_y >= nx)
         {
-            printf("Thread %d of block (%d, %d), where we assume the block starts with (%d, %d) and has block size (%d, %d) with a halo of radius %d tried to write to grid (%d, %d), however this is unallocated memory. The threads coords are (%d, %d), and the value of i is %d\n", threadIdx.x, blockIdx.x, blockIdx.y, blockIdx.x * CEIL_DIV(nx, gridDim.x), blockIdx.y * CEIL_DIV(ny, gridDim.y), block_dims[0], block_dims[1], halo_rad, grid_x, grid_y, thread_x, thread_y, i);
+            printf("Thread %d of block (%d, %d), where we assume the block starts with (%d, %d) and has block size (%d, %d) with a halo of radius %d tried to write to grid (%d, %d), however this is unallocated memory. The threads coords are (%d, %d), and the value of i is %d. The grid dimensions are (%d, %d)\n", threadIdx.x, blockIdx.x, blockIdx.y, blockIdx.x * CEIL_DIV(nx, gridDim.x), blockIdx.y * CEIL_DIV(ny, gridDim.y), block_dims[0], block_dims[1], halo_rad, grid_x, grid_y, thread_x, thread_y, i, gridDim.x, gridDim.y);
         }
 
         // if (grid_x == 44 && grid_y == 44)
