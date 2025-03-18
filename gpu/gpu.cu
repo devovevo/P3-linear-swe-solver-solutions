@@ -204,7 +204,7 @@ __global__ void kernel(float *const h, float *const u, float *const v, float *co
 
         if (grid_x >= nx || grid_y >= nx)
         {
-            printf("Thread %d of block (%d, %d) tried to write to grid (%d, %d), however this is unallocated memory.\n", threadIdx.x, blockIdx.x, blockIdx.y, grid_x, grid_y);
+            printf("Thread %d of block (%d, %d) tried to write to grid (%d, %d), however this is unallocated memory. The threads coords are (%d, %d), and the value of i is %d\n", threadIdx.x, blockIdx.x, blockIdx.y, grid_x, grid_y, thread_x, thread_y, i);
         }
 
         // if (grid_x == 44 && grid_y == 44)
