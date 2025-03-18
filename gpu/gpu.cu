@@ -104,8 +104,8 @@ __global__ void kernel(float *const h, float *const u, float *const v, float *co
         const int thread_x = i / halo_block_dims[0];
         const int thread_y = i % halo_block_dims[0];
 
-        const int grid_x = mod(blockIdx.x * CEIL_DIV(nx, gridDim.x) + thread_x, nx);
-        const int grid_y = mod(blockIdx.y * CEIL_DIV(ny, gridDim.y) + thread_y, ny);
+        const int grid_x = mod(blockIdx.x * (CEIL_DIV(nx, gridDim.x)) + thread_x, nx);
+        const int grid_y = mod(blockIdx.y * (CEIL_DIV(ny, gridDim.y)) + thread_y, ny);
 
         const int local_idx = i / blockDim.x;
 
