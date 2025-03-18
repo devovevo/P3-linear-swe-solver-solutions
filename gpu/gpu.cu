@@ -176,7 +176,7 @@ __global__ void kernel(float *const h, float *const u, float *const v, float *co
             block_u(thread_x + 1, thread_y) += (a1 * thread_du[local_idx] + a2 * thread_du1[local_idx]) * dt;
             block_v(thread_x, thread_y + 1) += (a1 * thread_dv[local_idx] + a2 * thread_dv1[local_idx]) * dt;
 
-            if (thread_x == block_dims[0] - 1)
+            if (thread_x == block_dims[0])
             {
                 block_h(thread_x, thread_y) = 1;
             }
@@ -186,7 +186,7 @@ __global__ void kernel(float *const h, float *const u, float *const v, float *co
                 block_h(thread_x, thread_y) = -1;
             }
 
-            if (thread_y == block_dims[1] - 1)
+            if (thread_y == block_dims[1])
             {
                 block_h(thread_x, thread_y) = 1;
             }
