@@ -212,10 +212,10 @@ __global__ void kernel(float *const h, float *const u, float *const v, float *co
             continue;
         }
 
-        if (threadIdx.x == 0 && local_idx == 0)
-        {
-            printf("Thread %d of block (%d, %d), where we assume the block starts with (%d, %d) and ends with (%d, %d) and has block size (%d, %d) with a halo of radius %d tried to write to grid (%d, %d), however this is unallocated memory. The threads coords are (%d, %d), and the value of i is %d. The grid dimensions are (%d, %d), and CEIL_DIV(nx, gridDim.x) is %d. The size of the grid is (%d, %d)\n", threadIdx.x, blockIdx.x, blockIdx.y, blockIdx.x * (CEIL_DIV(nx, gridDim.x)), blockIdx.y * (CEIL_DIV(ny, gridDim.y)), blockIdx.x * (CEIL_DIV(nx, gridDim.x)) + block_dims[0] - 1, blockIdx.y * (CEIL_DIV(ny, gridDim.y)) + block_dims[1] - 1, block_dims[0], block_dims[1], halo_rad, grid_x, grid_y, thread_x, thread_y, i, gridDim.x, gridDim.y, CEIL_DIV(nx, gridDim.x), nx, ny);
-        }
+        // if (threadIdx.x == 0 && local_idx == 0)
+        // {
+        //     printf("Thread %d of block (%d, %d), where we assume the block starts with (%d, %d) and ends with (%d, %d) and has block size (%d, %d) with a halo of radius %d tried to write to grid (%d, %d), however this is unallocated memory. The threads coords are (%d, %d), and the value of i is %d. The grid dimensions are (%d, %d), and CEIL_DIV(nx, gridDim.x) is %d. The size of the grid is (%d, %d)\n", threadIdx.x, blockIdx.x, blockIdx.y, blockIdx.x * (CEIL_DIV(nx, gridDim.x)), blockIdx.y * (CEIL_DIV(ny, gridDim.y)), blockIdx.x * (CEIL_DIV(nx, gridDim.x)) + block_dims[0] - 1, blockIdx.y * (CEIL_DIV(ny, gridDim.y)) + block_dims[1] - 1, block_dims[0], block_dims[1], halo_rad, grid_x, grid_y, thread_x, thread_y, i, gridDim.x, gridDim.y, CEIL_DIV(nx, gridDim.x), nx, ny);
+        // }
 
         // if (grid_x == 44 && grid_y == 44)
         // {
