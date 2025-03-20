@@ -30,8 +30,8 @@ void init(float *h0, float *u0, float *v0, float length_, float width_, int nx_,
     cudaMalloc((void **)&v, nx * ny * sizeof(float));
 
     cudaMemcpy(h, h0, nx * ny * sizeof(float), cudaMemcpyHostToDevice);
-    cudaMemcpy(u, u0, nx * ny * sizeof(float), cudaMemcpyHostToDevice);
-    cudaMemcpy(v, v0, nx * ny * sizeof(float), cudaMemcpyHostToDevice);
+    cudaMemcpy(u, u0, (nx + 1) * ny * sizeof(float), cudaMemcpyHostToDevice);
+    cudaMemcpy(v, v0, nx * (ny + 1) * sizeof(float), cudaMemcpyHostToDevice);
 
     cudaMalloc((void **)&dh1, nx * ny * sizeof(float));
     cudaMalloc((void **)&du1, nx * ny * sizeof(float));
@@ -104,8 +104,8 @@ __global__ void kernel(float *const h, float *const u, float *const v, float *co
         const int thread_x = i / halo_block_dims[0];
         const int thread_y = i % halo_block_dims[0];
 
-        const int grid_x = mod(blockIdx.x * CEIL_DIV(nx, gridDim.x) + thread_x, nx);
-        const int grid_y = mod(blockIdx.y * CEIL_DIV(ny, gridDim.y) + thread_y, ny);
+        const int grid_x = mod(blockIdx.x * CEIL_DIV(nx, gridDim.x) + thread_x - 1, nx);
+        const int grid_y = mod(blockIdx.y * CEIL_DIV(ny, gridDim.y) + thread_y - 1, ny);
 
         const int local_idx = i / blockDim.x;
 
@@ -202,12 +202,12 @@ __global__ void kernel(float *const h, float *const u, float *const v, float *co
         const int thread_x = i / halo_block_dims[0];
         const int thread_y = i % halo_block_dims[0];
 
-        const int grid_x = blockIdx.x * CEIL_DIV(nx, gridDim.x) + thread_x;
-        const int grid_y = blockIdx.y * CEIL_DIV(ny, gridDim.y) + thread_y;
+        const int grid_x = blockIdx.x * CEIL_DIV(nx, gridDim.x) + thread_x - 1;
+        const int grid_y = blockIdx.y * CEIL_DIV(ny, gridDim.y) + thread_y - 1;
 
         const int local_idx = i / blockDim.x;
 
-        if (thread_x >= block_dims[0] || thread_y >= block_dims[1])
+        if (grid_x == 0 || grid_y == 0 || thread_x >= block_dims[0] || thread_y >= block_dims[1])
         {
             continue;
         }
