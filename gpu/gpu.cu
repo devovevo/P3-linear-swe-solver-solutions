@@ -207,7 +207,7 @@ __global__ void kernel(float *const h, float *const u, float *const v, float *co
 
         const int local_idx = i / blockDim.x;
 
-        if (grid_x == 0 || grid_y == 0 || thread_x >= block_dims[0] || thread_y >= block_dims[1])
+        if (thread_x == 0 || thread_y == 0 || thread_x >= block_dims[0] || thread_y >= block_dims[1])
         {
             continue;
         }
